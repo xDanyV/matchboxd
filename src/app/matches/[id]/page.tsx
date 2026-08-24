@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import Navbar from '@/components/layout/Navbar';
+import { auth } from '@/auth';
+import RateButton from '@/components/matches/RateButton';
 import {
     Star,
     MessageSquare,
@@ -23,6 +25,7 @@ export const revalidate = 0;
 
 export default async function MatchDetailPage({ params }: MatchPageProps) {
     const { id } = await params;
+    const session = await auth();
 
     const match = await prisma.match.findUnique({
         where: { id },
@@ -222,9 +225,13 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             </p>
                         </div>
 
-                        <button className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10 active:scale-95">
-                            Calificar Partido
-                        </button>
+                        <RateButton
+                            matchId={match.id}
+                            matchTitle={`${match.homeTeam.name} vs ${match.awayTeam.name}`}
+                            homeTeam={match.homeTeam}
+                            awayTeam={match.awayTeam}
+                            isAuthenticated={!!session?.user}
+                        />
                     </div>
 
                     {/* Distribución MVP */}
