@@ -1,13 +1,176 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// USUARIOS & PERFILES
+// -------------------------------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  reviews     Review[]
+  mvpVotes    MvpVote[]
+  watchlist   Watchlist[]
+  reviewLikes ReviewLike[]
+
+  @@map("users")
+}
+
+// -------------------------------------------------------------
+// COMPETICIONES & EQUIPOS
+// -------------------------------------------------------------
+model Competition {
+  id      String  @id @default(cuid())
+  name    String // ej. "UEFA Champions League", "Copa del Mundo", "Liga MX"
+  slug    String  @unique
+  logoUrl String?
+  type    String // "CLUB" | "NATIONAL"
+  matches Match[]
+
+  @@map("competitions")
+}
+
+model Team {
+  id        String  @id @default(cuid())
+  name      String // ej. "Real Madrid", "FC Barcelona", "Argentina"
+  shortName String? // ej. "RMA", "FCB", "ARG"
+  slug      String  @unique
+  crestUrl  String? // Escudo del equipo
+  country   String?
+
+  homeMatches Match[]  @relation("HomeTeam")
+  awayMatches Match[]  @relation("AwayTeam")
+  players     Player[]
+
+  @@map("teams")
+}
+
+model Player {
+  id       String  @id @default(cuid())
+  name     String // ej. "Lionel Messi", "Zinedine Zidane"
+  photoUrl String?
+  position String? // "GK", "DEF", "MID", "FWD"
+  teamId   String?
+  team     Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  mvpVotes MvpVote[]
+
+  @@map("players")
+}
+
+// -------------------------------------------------------------
+// PARTIDOS (MATCHES)
+// -------------------------------------------------------------
+model Match {
+  id        String   @id @default(cuid())
+  date      DateTime
+  homeScore Int
+  awayScore Int
+  stadium   String?
+  stage     String? // ej. "Final", "Semifinal", "Fase de Grupos", "Jornada 10"
+  season    String // ej. "2004-2005", "2022"
+  isIconic  Boolean  @default(false)
+  summary   String?  @db.Text
+  tags      String[] // ej. ["Remontada", "Tiempo Extra", "Polémica", "Clásico"]
+
+  homeTeamId String
+  homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+
+  awayTeamId String
+  awayTeam   Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  competitionId String
+  competition   Competition @relation(fields: [competitionId], references: [id])
+
+  reviews   Review[]
+  mvpVotes  MvpVote[]
+  watchlist Watchlist[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([competitionId])
+  @@index([date])
+  @@map("matches")
+}
+
+// -------------------------------------------------------------
+// RESEÑAS, CALIFICACIONES & VOTOS
+// -------------------------------------------------------------
+model Review {
+  id          String  @id @default(cuid())
+  rating      Float // Calificación (1.0 a 10.0 o 1.0 a 5.0)
+  title       String?
+  content     String  @db.Text
+  hasSpoilers Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  likes ReviewLike[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, matchId]) // Un usuario solo puede dejar una review principal por partido
+  @@map("reviews")
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  userId    String
+  reviewId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
+  @@map("review_likes")
+}
+
+model MvpVote {
+  id       String @id @default(cuid())
+  userId   String
+  matchId  String
+  playerId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, matchId]) // Un usuario solo vota 1 MVP por partido
+  @@map("mvp_votes")
+}
+
+model Watchlist {
+  id      String  @id @default(cuid())
+  userId  String
+  matchId String
+  watched Boolean @default(false) // false = por ver, true = visto (diary)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, matchId])
+  @@map("watchlist")
 }
