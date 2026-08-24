@@ -8,25 +8,67 @@ generator client {
 }
 
 // -------------------------------------------------------------
-// USUARIOS & PERFILES
+// MODELOS DE AUTENTICACIÓN (Auth.js / NextAuth)
 // -------------------------------------------------------------
 model User {
   id            String    @id @default(cuid())
   name          String?
   username      String?   @unique
-  email         String    @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
   bio           String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
 
   reviews     Review[]
   mvpVotes    MvpVote[]
   watchlist   Watchlist[]
   reviewLikes ReviewLike[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 // -------------------------------------------------------------
@@ -34,10 +76,10 @@ model User {
 // -------------------------------------------------------------
 model Competition {
   id      String  @id @default(cuid())
-  name    String // ej. "UEFA Champions League", "Copa del Mundo", "Liga MX"
+  name    String
   slug    String  @unique
   logoUrl String?
-  type    String // "CLUB" | "NATIONAL"
+  type    String
   matches Match[]
 
   @@map("competitions")
@@ -45,10 +87,10 @@ model Competition {
 
 model Team {
   id        String  @id @default(cuid())
-  name      String // ej. "Real Madrid", "FC Barcelona", "Argentina"
-  shortName String? // ej. "RMA", "FCB", "ARG"
+  name      String
+  shortName String?
   slug      String  @unique
-  crestUrl  String? // Escudo del equipo
+  crestUrl  String?
   country   String?
 
   homeMatches Match[]  @relation("HomeTeam")
@@ -60,9 +102,9 @@ model Team {
 
 model Player {
   id       String  @id @default(cuid())
-  name     String // ej. "Lionel Messi", "Zinedine Zidane"
+  name     String
   photoUrl String?
-  position String? // "GK", "DEF", "MID", "FWD"
+  position String?
   teamId   String?
   team     Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
@@ -80,11 +122,11 @@ model Match {
   homeScore Int
   awayScore Int
   stadium   String?
-  stage     String? // ej. "Final", "Semifinal", "Fase de Grupos", "Jornada 10"
-  season    String // ej. "2004-2005", "2022"
+  stage     String?
+  season    String
   isIconic  Boolean  @default(false)
   summary   String?  @db.Text
-  tags      String[] // ej. ["Remontada", "Tiempo Extra", "Polémica", "Clásico"]
+  tags      String[]
 
   homeTeamId String
   homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
@@ -112,7 +154,7 @@ model Match {
 // -------------------------------------------------------------
 model Review {
   id          String  @id @default(cuid())
-  rating      Float // Calificación (1.0 a 10.0 o 1.0 a 5.0)
+  rating      Float
   title       String?
   content     String  @db.Text
   hasSpoilers Boolean @default(false)
@@ -128,7 +170,7 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, matchId]) // Un usuario solo puede dejar una review principal por partido
+  @@unique([userId, matchId])
   @@map("reviews")
 }
 
@@ -156,7 +198,7 @@ model MvpVote {
 
   createdAt DateTime @default(now())
 
-  @@unique([userId, matchId]) // Un usuario solo vota 1 MVP por partido
+  @@unique([userId, matchId])
   @@map("mvp_votes")
 }
 
@@ -164,7 +206,7 @@ model Watchlist {
   id      String  @id @default(cuid())
   userId  String
   matchId String
-  watched Boolean @default(false) // false = por ver, true = visto (diary)
+  watched Boolean @default(false)
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
