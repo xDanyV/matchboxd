@@ -4,9 +4,9 @@ import { prisma } from '@/lib/prisma';
 import Navbar from '@/components/layout/Navbar';
 import { auth } from '@/auth';
 import RateButton from '@/components/matches/RateButton';
+import ReviewSection from '@/components/matches/ReviewSection';
 import {
     Star,
-    MessageSquare,
     Calendar,
     MapPin,
     Sparkles,
@@ -14,7 +14,6 @@ import {
     ArrowLeft,
     Share2,
     Bookmark,
-    ThumbsUp,
 } from 'lucide-react';
 
 interface MatchPageProps {
@@ -87,7 +86,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
             <Navbar />
 
             <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full flex-1 space-y-6 sm:space-y-8">
-
                 {/* Navegación y Acciones */}
                 <div className="flex items-center justify-between gap-4">
                     <Link
@@ -116,8 +114,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
                 {/* Encabezado Principal del Partido */}
                 <section className="relative overflow-hidden rounded-3xl bg-slate-900/60 border border-slate-800/80 p-5 sm:p-8 md:p-10 backdrop-blur-sm shadow-2xl space-y-6">
-
-                    {/* Metadatos Superiores */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
                         <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-300">
                             <Trophy className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -134,10 +130,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         )}
                     </div>
 
-                    {/* Tablero de Marcador */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center py-2">
-
-                        {/* Equipo Local */}
                         <div className="text-center md:text-left space-y-1">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Local</span>
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
@@ -145,7 +138,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             </h1>
                         </div>
 
-                        {/* Marcador Central */}
                         <div className="flex flex-col items-center justify-center bg-slate-950/80 border border-slate-800/80 rounded-2xl py-4 px-6 max-w-xs mx-auto w-full shadow-inner">
                             <div className="flex items-center gap-4 text-4xl sm:text-5xl font-black font-mono text-emerald-400">
                                 <span>{match.homeScore}</span>
@@ -158,7 +150,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             </div>
                         </div>
 
-                        {/* Equipo Visitante */}
                         <div className="text-center md:text-right space-y-1">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Visitante</span>
                             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
@@ -167,7 +158,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         </div>
                     </div>
 
-                    {/* Estadio y Tags */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800/60 text-xs sm:text-sm text-slate-400">
                         {match.stadium && (
                             <div className="flex items-center gap-1.5">
@@ -187,7 +177,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             ))}
                         </div>
                     </div>
-
                 </section>
 
                 {/* Resumen Histórico */}
@@ -204,8 +193,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
                 {/* Puntuación y Votación MVP */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {/* Calificación de la Comunidad */}
                     <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between space-y-4">
                         <div>
                             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -234,7 +221,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         />
                     </div>
 
-                    {/* Distribución MVP */}
                     <div className="md:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
@@ -272,75 +258,10 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             <p className="text-xs text-slate-500 italic">No hay votos de MVP registrados aún.</p>
                         )}
                     </div>
-
                 </div>
 
-                {/* Muro de Reseñas */}
-                <section className="space-y-4 sm:space-y-6 pt-4">
-                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                        <div className="flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-emerald-400" />
-                            <h3 className="text-base sm:text-lg font-black text-white tracking-tight font-sans">
-                                Reseñas y Análisis ({match.reviews.length})
-                            </h3>
-                        </div>
-                    </div>
-
-                    {match.reviews.length > 0 ? (
-                        <div className="space-y-4">
-                            {match.reviews.map((review) => (
-                                <article
-                                    key={review.id}
-                                    className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-3"
-                                >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-200">
-                                                {review.user.name?.charAt(0) || 'U'}
-                                            </div>
-                                            <div>
-                                                <span className="text-xs sm:text-sm font-bold text-slate-200 block">
-                                                    {review.user.name || review.user.username}
-                                                </span>
-                                                <span className="text-[10px] text-slate-500">
-                                                    {new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' }).format(new Date(review.createdAt))}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300">
-                                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                            <span>{review.rating.toFixed(1)}</span>
-                                        </div>
-                                    </div>
-
-                                    {review.title && (
-                                        <h4 className="text-sm sm:text-base font-bold text-slate-100">
-                                            {review.title}
-                                        </h4>
-                                    )}
-
-                                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                                        {review.content}
-                                    </p>
-
-                                    <div className="pt-2 flex items-center gap-4 text-xs text-slate-500">
-                                        <button className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors">
-                                            <ThumbsUp className="w-3.5 h-3.5" />
-                                            <span>{review._count.likes} likes</span>
-                                        </button>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-10 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800 p-8 space-y-2">
-                            <p className="text-sm font-medium text-slate-400">Aún no hay reseñas para este partido.</p>
-                            <p className="text-xs text-slate-500">¡Sé el primero en calificarlo y dejar tu opinión!</p>
-                        </div>
-                    )}
-                </section>
-
+                {/* Muro de Reseñas Filtrable y Buscable */}
+                <ReviewSection initialReviews={match.reviews} />
             </main>
         </div>
     );
