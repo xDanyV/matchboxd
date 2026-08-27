@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import { auth } from '@/auth';
 import RateButton from '@/components/matches/RateButton';
 import ReviewSection from '@/components/matches/ReviewSection';
+import WatchlistButton from '@/components/matches/WatchlistButton';
 import {
     Star,
     Calendar,
@@ -13,7 +14,6 @@ import {
     Trophy,
     ArrowLeft,
     Share2,
-    Bookmark,
 } from 'lucide-react';
 
 interface MatchPageProps {
@@ -59,6 +59,18 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
         notFound();
     }
 
+    // Consulta si el partido está guardado en la watchlist del usuario
+    const isWatchlisted = session?.user?.id
+        ? !!(await prisma.watchlist.findUnique({
+            where: {
+                userId_matchId: {
+                    userId: session.user.id,
+                    matchId: id,
+                },
+            },
+        }))
+        : false;
+
     // Cálculos de Calificación Promedio
     const totalRating = match.reviews.reduce((acc, r) => acc + r.rating, 0);
     const avgRating = match.reviews.length > 0 ? (totalRating / match.reviews.length).toFixed(1) : null;
@@ -97,12 +109,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     </Link>
 
                     <div className="flex items-center gap-2">
-                        <button
-                            aria-label="Guardar en lista por ver"
-                            className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-all active:scale-95"
-                        >
-                            <Bookmark className="w-4 h-4" />
-                        </button>
+                        {/* Botón dinámico de Watchlist */}
+                        <WatchlistButton matchId={match.id} initialIsSaved={isWatchlisted} />
+
                         <button
                             aria-label="Compartir partido"
                             className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-all active:scale-95"
