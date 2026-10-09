@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import Navbar from '@/components/layout/Navbar';
+import Image from 'next/image';
 import { Bookmark, Calendar, Trophy, ArrowRight } from 'lucide-react';
 
 export default async function WatchlistPage() {
@@ -86,15 +86,51 @@ export default async function WatchlistPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between py-1">
-                                    <div className="flex-1 text-right font-bold text-sm sm:text-base text-slate-100 group-hover:text-white">
-                                        {match.homeTeam.name}
+                                {/* Contenedor de marcador y escudos */}
+                                <div className="flex items-center justify-between py-1 gap-2">
+                                    {/* Equipo Local */}
+                                    <div className="flex-1 flex items-center justify-end gap-2.5 min-w-0">
+                                        <span className="font-bold text-sm sm:text-base text-slate-100 group-hover:text-white truncate text-right">
+                                            {match.homeTeam.shortName || match.homeTeam.name}
+                                        </span>
+                                        {match.homeTeam.crestUrl ? (
+                                            <Image
+                                                src={match.homeTeam.crestUrl}
+                                                alt={match.homeTeam.name}
+                                                width={28}
+                                                height={28}
+                                                className="object-contain shrink-0"
+                                            />
+                                        ) : (
+                                            <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
+                                                {match.homeTeam.name.charAt(0)}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="px-4 text-center font-mono font-black text-emerald-400 text-lg">
+
+                                    {/* Marcador */}
+                                    <div className="px-3 text-center font-mono font-black text-emerald-400 text-base sm:text-lg shrink-0">
                                         {match.homeScore} - {match.awayScore}
                                     </div>
-                                    <div className="flex-1 text-left font-bold text-sm sm:text-base text-slate-100 group-hover:text-white">
-                                        {match.awayTeam.name}
+
+                                    {/* Equipo Visitante */}
+                                    <div className="flex-1 flex items-center justify-start gap-2.5 min-w-0">
+                                        {match.awayTeam.crestUrl ? (
+                                            <Image
+                                                src={match.awayTeam.crestUrl}
+                                                alt={match.awayTeam.name}
+                                                width={28}
+                                                height={28}
+                                                className="object-contain shrink-0"
+                                            />
+                                        ) : (
+                                            <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
+                                                {match.awayTeam.name.charAt(0)}
+                                            </div>
+                                        )}
+                                        <span className="font-bold text-sm sm:text-base text-slate-100 group-hover:text-white truncate text-left">
+                                            {match.awayTeam.shortName || match.awayTeam.name}
+                                        </span>
                                     </div>
                                 </div>
                             </Link>
