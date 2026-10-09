@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import Navbar from '@/components/layout/Navbar';
 import MatchCard from '@/components/matches/MatchCard';
 import { Flame, Sparkles } from 'lucide-react';
 
@@ -7,6 +6,7 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   const rawMatches = await prisma.match.findMany({
+    take: 6, // 👈 Limitamos a los 6 partidos más recientes
     include: {
       homeTeam: true,
       awayTeam: true,
@@ -39,7 +39,6 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full flex-1 space-y-8 sm:space-y-10">
 
@@ -69,7 +68,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-medium">
-              {matches.length} partidos
+              Mostrando {matches.length} partidos
             </span>
           </div>
 

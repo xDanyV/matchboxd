@@ -32,8 +32,6 @@ export default async function WatchlistPage() {
 
     return (
         <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
-            <Navbar />
-
             <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-6">
                 <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
                     <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
