@@ -14,6 +14,7 @@ import {
     Trophy,
     ArrowLeft,
     Share2,
+    User,
 } from 'lucide-react';
 
 interface MatchPageProps {
@@ -59,7 +60,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
         notFound();
     }
 
-    // Consulta si el partido está guardado en la watchlist del usuario
     const isWatchlisted = session?.user?.id
         ? !!(await prisma.watchlist.findUnique({
             where: {
@@ -71,16 +71,13 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
         }))
         : false;
 
-    // Cálculos de Calificación Promedio
     const totalRating = match.reviews.reduce((acc, r) => acc + r.rating, 0);
     const avgRating = match.reviews.length > 0 ? (totalRating / match.reviews.length).toFixed(1) : null;
 
-    // Formato de Fecha
     const formattedDate = new Intl.DateTimeFormat('es-MX', {
         dateStyle: 'full',
     }).format(new Date(match.date));
 
-    // Cálculo de Porcentajes de MVP
     const totalMvpVotes = match.mvpVotes.length;
     const mvpCounts: { [key: string]: { player: typeof match.mvpVotes[0]['player']; count: number } } = {};
 
@@ -108,7 +105,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     </Link>
 
                     <div className="flex items-center gap-2">
-                        {/* Botón dinámico de Watchlist */}
                         <WatchlistButton matchId={match.id} initialIsSaved={isWatchlisted} />
 
                         <button
@@ -276,15 +272,40 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         </div>
 
                         {mvpList.length > 0 ? (
-                            <div className="space-y-3">
+                            <div className="space-y-3.5">
                                 {mvpList.map((item) => {
                                     const percentage = totalMvpVotes > 0 ? Math.round((item.count / totalMvpVotes) * 100) : 0;
                                     return (
                                         <div key={item.player.id} className="space-y-1.5">
                                             <div className="flex items-center justify-between text-xs sm:text-sm font-medium">
-                                                <span className="text-slate-200">{item.player.name}</span>
-                                                <span className="text-emerald-400 font-bold font-mono">{percentage}% ({item.count})</span>
+                                                {/* Foto y Nombre del Jugador */}
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    {item.player.photoUrl ? (
+                                                        <Image
+                                                            src={item.player.photoUrl}
+                                                            alt={item.player.name}
+                                                            width={32}
+                                                            height={32}
+                                                            className="w-8 h-8 rounded-full object-cover border border-slate-700 shrink-0 bg-slate-800"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                                            <User className="w-4 h-4" />
+                                                        </div>
+                                                    )}
+                                                    <span className="text-slate-200 truncate">{item.player.name}</span>
+                                                    {item.player.position && (
+                                                        <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">
+                                                            • {item.player.position}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="text-emerald-400 font-bold font-mono shrink-0 ml-2">
+                                                    {percentage}% ({item.count})
+                                                </span>
                                             </div>
+
+                                            {/* Barra de Porcentaje */}
                                             <div className="w-full bg-slate-800/80 rounded-full h-2 overflow-hidden">
                                                 <div
                                                     className="bg-emerald-500 h-full rounded-full transition-all duration-500"

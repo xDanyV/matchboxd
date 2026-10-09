@@ -2,18 +2,22 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, X, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
+import { Star, X, Sparkles, Loader2, AlertCircle, User } from 'lucide-react';
 import { submitReview } from '@/app/actions/review';
 
 interface Player {
     id: string;
     name: string;
     position: string | null;
+    photoUrl?: string | null;
 }
 
 interface Team {
     id: string;
     name: string;
+    shortName?: string | null;
+    crestUrl?: string | null;
     players: Player[];
 }
 
@@ -47,7 +51,12 @@ export default function ReviewModal({
     const [hasSpoilers, setHasSpoilers] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Estado para alternar el equipo en el selector de MVP ("home" | "away")
+    const [selectedTeamTab, setSelectedTeamTab] = useState<'home' | 'away'>('home');
+
     if (!isOpen) return null;
+
+    const activeTeam = selectedTeamTab === 'home' ? homeTeam : awayTeam;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -73,16 +82,11 @@ export default function ReviewModal({
                 if (err instanceof Error) {
                     setError(err.message);
                 } else {
-                    setError('Ocurrio un error inesperado al guardar la calificacion.');
+                    setError('Ocurrió un error inesperado al guardar la calificación.');
                 }
             }
         });
     };
-
-    const allPlayers = [
-        { team: homeTeam.name, players: homeTeam.players },
-        { team: awayTeam.name, players: awayTeam.players },
-    ];
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -92,7 +96,7 @@ export default function ReviewModal({
                 <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
                     <div>
                         <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-                            Registrar Calificacion
+                            Registrar Calificación
                         </span>
                         <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
                             {matchTitle}
@@ -115,10 +119,10 @@ export default function ReviewModal({
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Selector de Puntuacion */}
+                    {/* Selector de Puntuación */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
-                            <span>Puntuacion</span>
+                            <span>Puntuación</span>
                             <span className="text-emerald-400 font-mono text-base font-black">
                                 {hoverRating !== null ? hoverRating : rating} / 10
                             </span>
@@ -146,38 +150,108 @@ export default function ReviewModal({
                         </div>
                     </div>
 
-                    {/* Selector MVP */}
+                    {/* Selector de MVP interactivo por Equipos */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                             <span>Votar MVP del Partido (Opcional)</span>
                         </label>
-                        <select
-                            value={mvpPlayerId}
-                            onChange={(e) => setMvpPlayerId(e.target.value)}
-                            className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors"
-                        >
-                            <option value="">Selecciona un jugador destacado...</option>
-                            {allPlayers.map((group) => (
-                                <optgroup key={group.team} label={group.team}>
-                                    {group.players.map((player) => (
-                                        <option key={player.id} value={player.id}>
-                                            {player.name} {player.position ? `(${player.position})` : ''}
-                                        </option>
-                                    ))}
-                                </optgroup>
-                            ))}
-                        </select>
+
+                        {/* Switch de Equipos */}
+                        <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedTeamTab('home')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${selectedTeamTab === 'home'
+                                        ? 'bg-slate-800 text-white shadow-md'
+                                        : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                            >
+                                {homeTeam.crestUrl && (
+                                    <Image
+                                        src={homeTeam.crestUrl}
+                                        alt={homeTeam.name}
+                                        width={18}
+                                        height={18}
+                                        className="object-contain"
+                                    />
+                                )}
+                                <span className="truncate">{homeTeam.shortName || homeTeam.name}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setSelectedTeamTab('away')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${selectedTeamTab === 'away'
+                                        ? 'bg-slate-800 text-white shadow-md'
+                                        : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                            >
+                                {awayTeam.crestUrl && (
+                                    <Image
+                                        src={awayTeam.crestUrl}
+                                        alt={awayTeam.name}
+                                        width={18}
+                                        height={18}
+                                        className="object-contain"
+                                    />
+                                )}
+                                <span className="truncate">{awayTeam.shortName || awayTeam.name}</span>
+                            </button>
+                        </div>
+
+                        {/* Lista de Jugadores con Foto */}
+                        <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                            {activeTeam.players.length > 0 ? (
+                                activeTeam.players.map((player) => {
+                                    const isSelected = mvpPlayerId === player.id;
+                                    return (
+                                        <div
+                                            key={player.id}
+                                            onClick={() => setMvpPlayerId(isSelected ? '' : player.id)}
+                                            className={`flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer ${isSelected
+                                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                                                    : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                                                }`}
+                                        >
+                                            {player.photoUrl ? (
+                                                <Image
+                                                    src={player.photoUrl}
+                                                    alt={player.name}
+                                                    width={32}
+                                                    height={32}
+                                                    className="w-8 h-8 rounded-full object-cover bg-slate-800 border border-slate-700 shrink-0"
+                                                />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                                    <User className="w-4 h-4" />
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold truncate">{player.name}</p>
+                                                {player.position && (
+                                                    <p className="text-[10px] text-slate-500">{player.position}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-xs text-slate-500 italic p-2 text-center">
+                                    No hay jugadores registrados para este equipo.
+                                </p>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Titulo */}
+                    {/* Título */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                            Titulo del Analisis (Opcional)
+                            Título del Análisis (Opcional)
                         </label>
                         <input
                             type="text"
-                            placeholder="Ej. Una exhibicion tactica memorable..."
+                            placeholder="Ej. Una exhibición táctica memorable..."
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
@@ -187,7 +261,7 @@ export default function ReviewModal({
                     {/* Reseña */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                            Tu Opinion del Encuentro *
+                            Tu Opinión del Encuentro *
                         </label>
                         <textarea
                             required
@@ -229,7 +303,7 @@ export default function ReviewModal({
                             className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/10 active:scale-95 disabled:opacity-50"
                         >
                             {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                            <span>{isPending ? 'Guardando...' : 'Publicar Calificacion'}</span>
+                            <span>{isPending ? 'Guardando...' : 'Publicar Calificación'}</span>
                         </button>
                     </div>
                 </form>
