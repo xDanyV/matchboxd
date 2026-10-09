@@ -7,11 +7,14 @@ interface Player {
     id: string;
     name: string;
     position: string | null;
+    photoUrl?: string | null;
 }
 
 interface Team {
     id: string;
     name: string;
+    shortName?: string | null;
+    crestUrl?: string | null;
     players: Player[];
 }
 
