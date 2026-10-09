@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
-import Navbar from '@/components/layout/Navbar';
 import { auth } from '@/auth';
 import RateButton from '@/components/matches/RateButton';
 import ReviewSection from '@/components/matches/ReviewSection';
@@ -139,13 +139,30 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center py-2">
-                        <div className="text-center md:text-left space-y-1">
-                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Local</span>
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                                {match.homeTeam.name}
-                            </h1>
+                        {/* Equipo Local */}
+                        <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3 text-center md:text-left">
+                            {match.homeTeam.crestUrl ? (
+                                <Image
+                                    src={match.homeTeam.crestUrl}
+                                    alt={match.homeTeam.name}
+                                    width={56}
+                                    height={56}
+                                    className="object-contain shrink-0"
+                                />
+                            ) : (
+                                <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-xl font-bold text-slate-400 shrink-0">
+                                    {match.homeTeam.name.charAt(0)}
+                                </div>
+                            )}
+                            <div className="space-y-0.5">
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Local</span>
+                                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                                    {match.homeTeam.name}
+                                </h1>
+                            </div>
                         </div>
 
+                        {/* Marcador */}
                         <div className="flex flex-col items-center justify-center bg-slate-950/80 border border-slate-800/80 rounded-2xl py-4 px-6 max-w-xs mx-auto w-full shadow-inner">
                             <div className="flex items-center gap-4 text-4xl sm:text-5xl font-black font-mono text-emerald-400">
                                 <span>{match.homeScore}</span>
@@ -158,11 +175,27 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             </div>
                         </div>
 
-                        <div className="text-center md:text-right space-y-1">
-                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Visitante</span>
-                            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                                {match.awayTeam.name}
-                            </h2>
+                        {/* Equipo Visitante */}
+                        <div className="flex flex-col md:flex-row-reverse items-center justify-center md:justify-start gap-3 text-center md:text-right">
+                            {match.awayTeam.crestUrl ? (
+                                <Image
+                                    src={match.awayTeam.crestUrl}
+                                    alt={match.awayTeam.name}
+                                    width={56}
+                                    height={56}
+                                    className="object-contain shrink-0"
+                                />
+                            ) : (
+                                <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-xl font-bold text-slate-400 shrink-0">
+                                    {match.awayTeam.name.charAt(0)}
+                                </div>
+                            )}
+                            <div className="space-y-0.5">
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Visitante</span>
+                                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                                    {match.awayTeam.name}
+                                </h2>
+                            </div>
                         </div>
                     </div>
 
