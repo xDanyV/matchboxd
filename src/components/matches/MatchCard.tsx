@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, MessageSquare, Calendar, Sparkles } from 'lucide-react';
 
 interface MatchCardProps {
@@ -11,8 +12,8 @@ interface MatchCardProps {
         season: string;
         isIconic: boolean;
         tags: string[];
-        homeTeam: { name: string; shortName: string | null };
-        awayTeam: { name: string; shortName: string | null };
+        homeTeam: { name: string; shortName: string | null; crestUrl?: string | null };
+        awayTeam: { name: string; shortName: string | null; crestUrl?: string | null };
         competition: { name: string };
         _count: { reviews: number };
         averageRating: number | null;
@@ -46,15 +47,48 @@ export default function MatchCard({ match }: MatchCardProps) {
                 </div>
 
                 {/* Tablero de Marcador */}
-                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 space-y-2">
-                    <div className="flex items-center justify-between text-sm sm:text-base font-bold text-slate-100">
-                        <span className="truncate pr-2">{match.homeTeam.name}</span>
+                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 space-y-2.5">
+                    {/* Equipo Local */}
+                    <div className="flex items-center justify-between text-sm sm:text-base font-bold text-slate-100 gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            {match.homeTeam.crestUrl ? (
+                                <Image
+                                    src={match.homeTeam.crestUrl}
+                                    alt={match.homeTeam.name}
+                                    width={22}
+                                    height={22}
+                                    className="object-contain shrink-0"
+                                />
+                            ) : (
+                                <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0">
+                                    {match.homeTeam.name.charAt(0)}
+                                </div>
+                            )}
+                            <span className="truncate">{match.homeTeam.shortName || match.homeTeam.name}</span>
+                        </div>
                         <span className="font-mono text-base sm:text-lg font-black text-emerald-400 shrink-0">
                             {match.homeScore}
                         </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm sm:text-base font-bold text-slate-100">
-                        <span className="truncate pr-2">{match.awayTeam.name}</span>
+
+                    {/* Equipo Visitante */}
+                    <div className="flex items-center justify-between text-sm sm:text-base font-bold text-slate-100 gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            {match.awayTeam.crestUrl ? (
+                                <Image
+                                    src={match.awayTeam.crestUrl}
+                                    alt={match.awayTeam.name}
+                                    width={22}
+                                    height={22}
+                                    className="object-contain shrink-0"
+                                />
+                            ) : (
+                                <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0">
+                                    {match.awayTeam.name.charAt(0)}
+                                </div>
+                            )}
+                            <span className="truncate">{match.awayTeam.shortName || match.awayTeam.name}</span>
+                        </div>
                         <span className="font-mono text-base sm:text-lg font-black text-emerald-400 shrink-0">
                             {match.awayScore}
                         </span>

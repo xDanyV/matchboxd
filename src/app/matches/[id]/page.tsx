@@ -95,7 +95,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
     return (
         <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
-            <Navbar />
 
             <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full flex-1 space-y-6 sm:space-y-8">
                 {/* Navegación y Acciones */}

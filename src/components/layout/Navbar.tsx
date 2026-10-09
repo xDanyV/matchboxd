@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trophy, Search, Flame, Bookmark, LogIn, LogOut } from 'lucide-react';
+import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut } from 'lucide-react';
 import { auth, signIn, signOut } from '@/auth';
 
 export default async function Navbar() {
@@ -21,16 +21,6 @@ export default async function Navbar() {
                         </span>
                     </Link>
 
-                    {/* Buscador Central */}
-                    <div className="hidden sm:flex flex-1 max-w-lg relative">
-                        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Buscar partido, equipo o jugador..."
-                            className="w-full bg-slate-900/90 border border-slate-800 rounded-full pl-11 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/80 transition-colors"
-                        />
-                    </div>
-
                     {/* Enlaces y Estado de Sesión */}
                     <nav className="flex items-center gap-2 sm:gap-4">
                         <Link
@@ -48,6 +38,17 @@ export default async function Navbar() {
                             <Bookmark className="w-4.5 h-4.5 text-slate-400 shrink-0" />
                             <span>Por Ver</span>
                         </Link>
+
+                        {/* Nueva pestaña: Mis Reseñas (visible al iniciar sesión) */}
+                        {session?.user && (
+                            <Link
+                                href="/reviews"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-emerald-400 hover:bg-slate-900/70 transition-all"
+                            >
+                                <MessageSquare className="w-4.5 h-4.5 text-slate-400 shrink-0" />
+                                <span>Mis Reseñas</span>
+                            </Link>
+                        )}
 
                         {session?.user ? (
                             <div className="flex items-center gap-2.5 pl-2">
