@@ -39,7 +39,7 @@ export default async function Navbar() {
                             <span>Por Ver</span>
                         </Link>
 
-                        {/* Nueva pestaña: Mis Reseñas (visible al iniciar sesión) */}
+                        {/* Mis Reseñas (visible al iniciar sesión) */}
                         {session?.user && (
                             <Link
                                 href="/reviews"
@@ -52,19 +52,27 @@ export default async function Navbar() {
 
                         {session?.user ? (
                             <div className="flex items-center gap-2.5 pl-2">
-                                {session.user.image ? (
-                                    <Image
-                                        src={session.user.image}
-                                        alt={session.user.name || 'Avatar'}
-                                        width={36}
-                                        height={36}
-                                        className="rounded-full border border-emerald-500/40"
-                                    />
-                                ) : (
-                                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-xs text-emerald-400">
-                                        {session.user.name?.charAt(0) || 'U'}
-                                    </div>
-                                )}
+                                {/* Avatar enlazado al perfil */}
+                                <Link
+                                    href="/profile"
+                                    title="Mi perfil"
+                                    aria-label="Mi perfil"
+                                    className="rounded-full transition-transform hover:scale-105"
+                                >
+                                    {session.user.image ? (
+                                        <Image
+                                            src={session.user.image}
+                                            alt={session.user.name || 'Avatar'}
+                                            width={36}
+                                            height={36}
+                                            className="rounded-full border border-emerald-500/40"
+                                        />
+                                    ) : (
+                                        <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-xs text-emerald-400">
+                                            {session.user.name?.charAt(0) || 'U'}
+                                        </div>
+                                    )}
+                                </Link>
 
                                 <form
                                     action={async () => {

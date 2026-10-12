@@ -63,22 +63,19 @@ export default function ReviewCommentsModal({
     if (!isOpen) return null;
 
     const handleReaction = (isLike: boolean) => {
-        // Actualización optimista instantánea en UI
+        
         setLocalLikes((prevLikes) => {
             const existingIndex = prevLikes.findIndex((l) => l.userId === currentUserId);
             if (existingIndex > -1) {
                 const current = prevLikes[existingIndex];
                 if (current.isLike === isLike) {
-                    // Quitar reacción si presiona el mismo botón
                     return prevLikes.filter((_, idx) => idx !== existingIndex);
                 } else {
-                    // Cambiar de like a dislike o viceversa
                     const copy = [...prevLikes];
                     copy[existingIndex] = { ...current, isLike };
                     return copy;
                 }
             } else {
-                // Agregar nueva reacción
                 return [...prevLikes, { userId: currentUserId, isLike }];
             }
         });
@@ -95,7 +92,6 @@ export default function ReviewCommentsModal({
         e.preventDefault();
         if (!commentText.trim()) return;
 
-        // Actualización optimista del comentario nuevo de forma temporal
         const tempComment: Comment = {
             id: Date.now().toString(),
             content: commentText,
@@ -114,7 +110,7 @@ export default function ReviewCommentsModal({
             const res = await addReviewComment(review.id, currentUserId, textToSend);
             if (res.success) {
                 router.refresh();
-                onClose(); // Cierra el modal automáticamente después de comentar con éxito
+                onClose(); //
             }
         });
     };
