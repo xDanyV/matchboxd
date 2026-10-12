@@ -1,164 +1,123 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { MessageSquare, Search, Star, ThumbsUp, ArrowUpDown } from 'lucide-react';
-
-interface Review {
-    id: string;
-    rating: number;
-    title: string | null;
-    content: string;
-    createdAt: Date | string;
-    user: {
-        name: string | null;
-        username: string | null; // <-- Cambia a string | null
-    };
-    _count: {
-        likes: number;
-    };
-}
+import { useState } from 'react';
+import { MessageSquare, Star, Heart } from 'lucide-react';
+import ReviewCommentsModal from '@/components/reviews/ReviewCommentsModal';
 
 interface ReviewSectionProps {
-    initialReviews: Review[];
+    initialReviews: any[];
+    currentUserId: string;
 }
 
-export default function ReviewSection({ initialReviews }: ReviewSectionProps) {
+export default function ReviewSection({ initialReviews, currentUserId }: ReviewSectionProps) {
+    const [selectedReview, setSelectedReview] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState<'recent' | 'highest' | 'lowest' | 'likes'>('recent');
 
-    const filteredAndSortedReviews = useMemo(() => {
-        return initialReviews
-            .filter((review) => {
-                const query = searchQuery.toLowerCase();
-                const contentMatch = review.content.toLowerCase().includes(query);
-                const titleMatch = review.title?.toLowerCase().includes(query) ?? false;
-                const authorMatch =
-                    review.user.name?.toLowerCase().includes(query) ||
-                    review.user.username?.toLowerCase().includes(query);
-
-                return contentMatch || titleMatch || authorMatch;
-            })
-            .sort((a, b) => {
-                if (sortBy === 'recent') {
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                }
-                if (sortBy === 'highest') {
-                    return b.rating - a.rating;
-                }
-                if (sortBy === 'lowest') {
-                    return a.rating - b.rating;
-                }
-                if (sortBy === 'likes') {
-                    return b._count.likes - a._count.likes;
-                }
-                return 0;
-            });
-    }, [initialReviews, searchQuery, sortBy]);
+    // Filtrado dinámico por texto de reseña o nombre de usuario
+    const filteredReviews = initialReviews.filter((review) => {
+        const contentMatch = review.content.toLowerCase().includes(searchQuery.toLowerCase());
+        const titleMatch = review.title?.toLowerCase().includes(searchQuery.toLowerCase());
+        const userMatch = review.user?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+        return contentMatch || titleMatch || userMatch;
+    });
 
     return (
-        <section className="space-y-4 sm:space-y-6 pt-4">
-            {/* Encabezado con Contador */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-                <div className="flex items-center gap-2">
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-base sm:text-lg font-black text-white tracking-tight font-sans">
-                        Reseñas y Análisis ({initialReviews.length})
-                    </h3>
-                </div>
+                    <span>Reseñas y Análisis ({initialReviews.length})</span>
+                </h3>
 
-                {/* Controles: Buscador y Filtros */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                    {/* Buscador */}
-                    <div className="relative flex-1 sm:w-64">
-                        <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Buscar en reseñas o usuario..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
-                        />
-                    </div>
-
-                    {/* Selector de Ordenamiento */}
-                    <div className="relative flex items-center">
-                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                            className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-8 pr-3 py-1.5 focus:outline-none focus:border-emerald-500/50 cursor-pointer appearance-none font-medium"
-                        >
-                            <option value="recent">Más recientes</option>
-                            <option value="highest">Mejor valorados</option>
-                            <option value="lowest">Menor valoración</option>
-                            <option value="likes">Más populares</option>
-                        </select>
-                    </div>
+                {/* Buscador de reseñas */}
+                <div className="w-full sm:w-72">
+                    <input
+                        type="text"
+                        placeholder="Buscar en reseñas o usuario..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                    />
                 </div>
             </div>
 
-            {/* Muro de Reseñas Filtradas */}
-            {filteredAndSortedReviews.length > 0 ? (
-                <div className="space-y-4">
-                    {filteredAndSortedReviews.map((review) => (
-                        <article
-                            key={review.id}
-                            className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-3"
-                        >
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-200">
-                                        {review.user.name?.charAt(0) || 'U'}
+            <div className="space-y-4">
+                {filteredReviews.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic py-6 text-center">
+                        No se encontraron reseñas que coincidan con la búsqueda.
+                    </p>
+                ) : (
+                    filteredReviews.map((review) => {
+                        const likesCount = review.likes ? review.likes.filter((l: any) => l.isLike).length : 0;
+                        const commentsCount = review.comments ? review.comments.length : 0;
+                        const formattedDate = new Date(review.createdAt).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                        });
+
+                        return (
+                            <article
+                                key={review.id}
+                                className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-3 backdrop-blur-sm transition-all hover:border-slate-700/80"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-300 text-xs">
+                                            {review.user?.name ? review.user.name.charAt(0).toUpperCase() : 'U'}
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold text-white block">
+                                                {review.user?.name || 'Usuario Anónimo'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-500">{formattedDate}</span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span className="text-xs sm:text-sm font-bold text-slate-200 block">
-                                            {review.user.name || review.user.username || 'Usuario'}
-                                        </span>
-                                        <span className="text-[10px] text-slate-500">
-                                            {new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' }).format(
-                                                new Date(review.createdAt)
-                                            )}
-                                        </span>
+
+                                    <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg text-amber-400 font-bold text-xs">
+                                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                        <span>{review.rating.toFixed(1)}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300">
-                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                    <span>{review.rating.toFixed(1)}</span>
+                                {review.title && (
+                                    <h4 className="text-sm font-bold text-white">{review.title}</h4>
+                                )}
+
+                                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                                    {review.content}
+                                </p>
+
+                                {/* Acciones de Likes y Comentarios */}
+                                <div className="flex items-center gap-4 pt-2 border-t border-slate-800/60">
+                                    <div className="flex items-center gap-1 text-xs text-slate-400">
+                                        <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+                                        <span>{likesCount} likes</span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setSelectedReview(review)}
+                                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 transition-colors"
+                                    >
+                                        <MessageSquare className="w-3.5 h-3.5" />
+                                        <span>Comentar ({commentsCount})</span>
+                                    </button>
                                 </div>
-                            </div>
+                            </article>
+                        );
+                    })
+                )}
+            </div>
 
-                            {review.title && (
-                                <h4 className="text-sm sm:text-base font-bold text-slate-100">{review.title}</h4>
-                            )}
-
-                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                                {review.content}
-                            </p>
-
-                            <div className="pt-2 flex items-center gap-4 text-xs text-slate-500">
-                                <button className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors">
-                                    <ThumbsUp className="w-3.5 h-3.5" />
-                                    <span>{review._count.likes} likes</span>
-                                </button>
-                            </div>
-                        </article>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-10 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800 p-8 space-y-2">
-                    <p className="text-sm font-medium text-slate-400">
-                        {searchQuery
-                            ? 'No se encontraron reseñas que coincidan con tu búsqueda.'
-                            : 'Aún no hay reseñas para este partido.'}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                        {searchQuery
-                            ? 'Intenta con otros términos o limpia el filtro.'
-                            : '¡Sé el primero en calificarlo y dejar tu opinión!'}
-                    </p>
-                </div>
+            {/* Modal interactivo de comentarios y reacciones */}
+            {selectedReview && (
+                <ReviewCommentsModal
+                    review={selectedReview}
+                    currentUserId={currentUserId}
+                    isOpen={!!selectedReview}
+                    onClose={() => setSelectedReview(null)}
+                />
             )}
-        </section>
+        </div>
     );
 }

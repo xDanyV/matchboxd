@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { MessageSquare, Star, Heart, Calendar, LogIn } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
+import ReviewCardClient from '@/components/reviews/ReviewCardClient';
 
 export default async function ReviewsPage() {
     const session = await auth();
@@ -37,7 +37,7 @@ export default async function ReviewsPage() {
         return redirect('/');
     }
 
-    // Consultar todas las reseñas del usuario
+    // Consultar todas las reseñas del usuario incluyendo likes detallados y comentarios
     const reviews = await prisma.review.findMany({
         where: {
             userId: user.id
@@ -50,9 +50,18 @@ export default async function ReviewsPage() {
                     competition: true
                 }
             },
-            _count: {
-                select: {
-                    likes: true
+            likes: true,
+            comments: {
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            image: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
                 }
             }
         },
@@ -105,103 +114,18 @@ export default async function ReviewsPage() {
                             year: 'numeric'
                         });
 
+                        const likesCount = review.likes ? review.likes.filter((l) => l.isLike).length : 0;
+                        const dislikesCount = review.likes ? review.likes.filter((l) => !l.isLike).length : 0;
+
                         return (
-                            <article
+                            <ReviewCardClient
                                 key={review.id}
-                                className="bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 sm:p-6 transition-all space-y-4 backdrop-blur-sm"
-                            >
-                                {/* Cabecera del Partido */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
-                                    <Link
-                                        href={`/matches/${review.match.id}`}
-                                        className="flex items-center gap-3 group/item hover:opacity-90 transition-opacity"
-                                    >
-                                        <div className="flex items-center gap-2 font-bold text-slate-100 text-sm sm:text-base">
-                                            {review.match.homeTeam.crestUrl && (
-                                                <Image
-                                                    src={review.match.homeTeam.crestUrl}
-                                                    alt={review.match.homeTeam.name}
-                                                    width={24}
-                                                    height={24}
-                                                    className="object-contain"
-                                                />
-                                            )}
-                                            <span className="group-hover/item:text-emerald-400 transition-colors">
-                                                {review.match.homeTeam.shortName || review.match.homeTeam.name}
-                                            </span>
-                                            <span className="bg-slate-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-400">
-                                                {review.match.homeScore} - {review.match.awayScore}
-                                            </span>
-                                            <span className="group-hover/item:text-emerald-400 transition-colors">
-                                                {review.match.awayTeam.shortName || review.match.awayTeam.name}
-                                            </span>
-                                            {review.match.awayTeam.crestUrl && (
-                                                <Image
-                                                    src={review.match.awayTeam.crestUrl}
-                                                    alt={review.match.awayTeam.name}
-                                                    width={24}
-                                                    height={24}
-                                                    className="object-contain"
-                                                />
-                                            )}
-                                        </div>
-                                    </Link>
-
-                                    <div className="flex items-center gap-3 text-xs text-slate-400">
-                                        <span className="bg-slate-800/90 border border-slate-700/50 px-2.5 py-1 rounded-md font-medium text-slate-300">
-                                            {review.match.competition.name}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                                            {formattedDate}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Calificación y Título */}
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg text-amber-400 font-bold text-xs sm:text-sm">
-                                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                                            <span>{review.rating.toFixed(1)}</span>
-                                        </div>
-                                        {review.title && (
-                                            <h2 className="text-base sm:text-lg font-bold text-white">
-                                                {review.title}
-                                            </h2>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Contenido de la Reseña */}
-                                <div className="text-slate-300 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                                    {review.hasSpoilers ? (
-                                        <details className="cursor-pointer group">
-                                            <summary className="text-amber-400/90 text-xs font-semibold select-none group-open:mb-2">
-                                                Esta reseña contiene spoilers (haz clic para leer)
-                                            </summary>
-                                            <p className="text-slate-300 pt-1">{review.content}</p>
-                                        </details>
-                                    ) : (
-                                        <p>{review.content}</p>
-                                    )}
-                                </div>
-
-                                {/* Pie de tarjeta con likes */}
-                                <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
-                                    <div className="flex items-center gap-1.5 text-slate-400">
-                                        <Heart className="w-4 h-4 text-rose-500/80 fill-rose-500/20" />
-                                        <span>{review._count.likes} {review._count.likes === 1 ? 'me gusta' : 'me gusta'}</span>
-                                    </div>
-
-                                    <Link
-                                        href={`/matches/${review.match.id}`}
-                                        className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
-                                    >
-                                        Ver partido completo →
-                                    </Link>
-                                </div>
-                            </article>
+                                review={review}
+                                currentUserId={user.id}
+                                formattedDate={formattedDate}
+                                likesCount={likesCount}
+                                dislikesCount={dislikesCount}
+                            />
                         );
                     })}
                 </div>
