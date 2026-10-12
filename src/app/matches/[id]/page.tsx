@@ -40,6 +40,26 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
             reviews: {
                 include: {
                     user: true,
+                    match: { // 👈 Asegúrate de incluir esto para que el modal tenga los datos del partido
+                        include: {
+                            homeTeam: true,
+                            awayTeam: true,
+                        }
+                    },
+                    likes: true,
+                    comments: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    image: true,
+                                },
+                            },
+                        },
+                        orderBy: {
+                            createdAt: 'desc',
+                        },
+                    },
                     _count: {
                         select: { likes: true },
                     },
@@ -71,17 +91,19 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
         }))
         : false;
 
-    const totalRating = match.reviews.reduce((acc, r) => acc + r.rating, 0);
-    const avgRating = match.reviews.length > 0 ? (totalRating / match.reviews.length).toFixed(1) : null;
+    // Usamos el operador ! ya que validamos arriba que match no es null/undefined
+    const totalRating = match!.reviews.reduce((acc, r) => acc + r.rating, 0);
+    const avgRating = match!.reviews.length > 0 ? (totalRating / match!.reviews.length).toFixed(1) : null;
 
     const formattedDate = new Intl.DateTimeFormat('es-MX', {
         dateStyle: 'full',
-    }).format(new Date(match.date));
+    }).format(new Date(match!.date));
 
-    const totalMvpVotes = match.mvpVotes.length;
-    const mvpCounts: { [key: string]: { player: typeof match.mvpVotes[0]['player']; count: number } } = {};
+    const totalMvpVotes = match!.mvpVotes.length;
 
-    match.mvpVotes.forEach((vote) => {
+    const mvpCounts: Record<string, { player: typeof match.mvpVotes[0]['player']; count: number }> = {};
+
+    match!.mvpVotes.forEach((vote) => {
         if (!mvpCounts[vote.playerId]) {
             mvpCounts[vote.playerId] = { player: vote.player, count: 0 };
         }
@@ -92,7 +114,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
     return (
         <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
-
             <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full flex-1 space-y-6 sm:space-y-8">
                 {/* Navegación y Acciones */}
                 <div className="flex items-center justify-between gap-4">
@@ -122,7 +143,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-300">
                             <Trophy className="w-4 h-4 text-emerald-400 shrink-0" />
                             <span className="uppercase tracking-wider">
-                                {match.competition.name} • {match.stage} ({match.season})
+                                {match.competition.name} {match.stage ? `• ${match.stage}` : ''} ({match.season})
                             </span>
                         </div>
 
@@ -278,7 +299,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                                     return (
                                         <div key={item.player.id} className="space-y-1.5">
                                             <div className="flex items-center justify-between text-xs sm:text-sm font-medium">
-                                                {/* Foto y Nombre del Jugador */}
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     {item.player.photoUrl ? (
                                                         <Image
@@ -305,7 +325,6 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                                                 </span>
                                             </div>
 
-                                            {/* Barra de Porcentaje */}
                                             <div className="w-full bg-slate-800/80 rounded-full h-2 overflow-hidden">
                                                 <div
                                                     className="bg-emerald-500 h-full rounded-full transition-all duration-500"
@@ -322,8 +341,11 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     </div>
                 </div>
 
-                {/* Muro de Reseñas Filtrable y Buscable */}
-                <ReviewSection initialReviews={match.reviews} />
+                {/* Muro de Reseñas Interactivo */}
+                <ReviewSection
+                    initialReviews={match.reviews}
+                    currentUserId={session?.user?.id || ''}
+                />
             </main>
         </div>
     );
