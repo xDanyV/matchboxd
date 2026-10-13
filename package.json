@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "enrich:teams": "tsx --env-file=.env prisma/enrich-teams.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

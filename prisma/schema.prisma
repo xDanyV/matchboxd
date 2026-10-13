@@ -91,12 +91,18 @@ model Competition {
 }
 
 model Team {
-  id        String  @id @default(cuid())
-  name      String
-  shortName String?
-  slug      String  @unique
-  crestUrl  String?
-  country   String?
+  id            String  @id @default(cuid())
+  name          String
+  shortName     String?
+  slug          String  @unique
+  crestUrl      String?
+  country       String?
+  apiId         Int?    @unique
+  founded       Int?
+  venueName     String?
+  venueCity     String?
+  venueCapacity Int?
+  venueImageUrl String?
 
   homeMatches Match[]  @relation("HomeTeam")
   awayMatches Match[]  @relation("AwayTeam")
@@ -113,6 +119,8 @@ model Player {
   photoUrl String?
   position String?
   teamId   String?
+  number   Int?
+
   team     Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   mvpVotes MvpVote[]

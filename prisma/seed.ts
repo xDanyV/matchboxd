@@ -82,11 +82,13 @@ async function main() {
                     update: {
                         name: teams.home.name,
                         crestUrl: teams.home.logo,
+                        apiId: teams.home.id,
                     },
                     create: {
                         name: teams.home.name,
                         slug: homeSlug,
                         crestUrl: teams.home.logo,
+                        apiId: teams.home.id,
                     },
                 });
 
@@ -96,11 +98,13 @@ async function main() {
                     update: {
                         name: teams.away.name,
                         crestUrl: teams.away.logo,
+                        apiId: teams.away.id,
                     },
                     create: {
                         name: teams.away.name,
                         slug: awaySlug,
                         crestUrl: teams.away.logo,
+                        apiId: teams.away.id,
                     },
                 });
 
@@ -152,6 +156,7 @@ async function fetchAndSaveSquad(apiTeamId: number, dbTeamId: string) {
                     name: p.name,
                     photoUrl: p.photo,
                     position: p.position,
+                    number: p.number ?? null,
                     teamId: dbTeamId,
                 },
                 create: {
@@ -159,6 +164,7 @@ async function fetchAndSaveSquad(apiTeamId: number, dbTeamId: string) {
                     name: p.name,
                     photoUrl: p.photo,
                     position: p.position,
+                    number: p.number ?? null,
                     teamId: dbTeamId,
                 },
             });

@@ -6,6 +6,8 @@ import { Calendar, MessageSquare, Settings } from 'lucide-react';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import ReviewCardClient from '@/components/reviews/ReviewCardClient';
+import TeamCrest from '@/components/teams/TeamCrest';
+import TeamLink from '@/components/teams/TeamLink';
 
 interface UserProfilePageProps {
     params: Promise<{ username: string }>;
@@ -104,19 +106,20 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
 
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                             {user.favoriteTeam && (
-                                <span className="inline-flex items-center gap-2 bg-slate-800/90 border border-slate-700/50 px-3 py-1.5 rounded-full text-slate-200 font-semibold">
-                                    {user.favoriteTeam.crestUrl && (
-                                        <Image
-                                            src={user.favoriteTeam.crestUrl}
-                                            alt={user.favoriteTeam.name}
-                                            width={18}
-                                            height={18}
-                                            className="object-contain"
-                                        />
-                                    )}
+                                <TeamLink
+                                    slug={user.favoriteTeam.slug}
+                                    name={user.favoriteTeam.name}
+                                    className="inline-flex items-center gap-2 bg-slate-800/90 border border-slate-700/50 hover:border-emerald-500/40 px-3 py-1.5 rounded-full text-slate-200 font-semibold transition-colors"
+                                >
+                                    <TeamCrest
+                                        name={user.favoriteTeam.name}
+                                        crestUrl={user.favoriteTeam.crestUrl}
+                                        size={18}
+                                        className="rounded-md"
+                                    />
                                     <span className="text-slate-400 font-medium">Equipo favorito:</span>
                                     {user.favoriteTeam.shortName || user.favoriteTeam.name}
-                                </span>
+                                </TeamLink>
                             )}
                             <span className="inline-flex items-center gap-1.5 bg-slate-800/60 border border-slate-800 px-3 py-1.5 rounded-full text-slate-400 font-medium">
                                 <Calendar className="w-3.5 h-3.5 text-slate-500" />

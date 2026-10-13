@@ -2,7 +2,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import TeamCrest from '@/components/teams/TeamCrest';
+import TeamLink from '@/components/teams/TeamLink';
 import { Bookmark, Calendar, Trophy, ArrowRight } from 'lucide-react';
 
 export default async function WatchlistPage() {
@@ -70,70 +71,60 @@ export default async function WatchlistPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {items.map(({ id, match }) => (
-                            <Link
+                            <article
                                 key={id}
-                                href={`/matches/${match.id}`}
-                                className="group bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 transition-all duration-200 flex flex-col justify-between gap-4"
+                                className="group relative bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 transition-all duration-200"
                             >
-                                <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/60 pb-3">
-                                    <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400">
-                                        <Trophy className="w-3.5 h-3.5" />
-                                        <span>{match.competition.name}</span>
+                                <Link
+                                    href={`/matches/${match.id}`}
+                                    aria-label={`Ver partido: ${match.homeTeam.name} vs ${match.awayTeam.name}`}
+                                    className="absolute inset-0 z-0 rounded-2xl"
+                                />
+
+                                <div className="relative z-10 pointer-events-none flex h-full flex-col justify-between gap-4">
+                                    <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/60 pb-3">
+                                        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400">
+                                            <Trophy className="w-3.5 h-3.5" />
+                                            <span>{match.competition.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 font-mono">
+                                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                                            <span>{new Date(match.date).getFullYear()}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1 font-mono">
-                                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                                        <span>{new Date(match.date).getFullYear()}</span>
+
+                                    <div className="flex items-center justify-between py-1 gap-2">
+                                        {/* Equipo Local */}
+                                        <TeamLink
+                                            slug={match.homeTeam.slug}
+                                            name={match.homeTeam.name}
+                                            className="group/team flex-1 flex items-center justify-end gap-2.5 min-w-0"
+                                        >
+                                            <span className="font-bold text-sm sm:text-base text-slate-100 group-hover/team:text-emerald-400 transition-colors truncate text-right">
+                                                {match.homeTeam.shortName || match.homeTeam.name}
+                                            </span>
+                                            <TeamCrest name={match.homeTeam.name} crestUrl={match.homeTeam.crestUrl} size={28} />
+                                        </TeamLink>
+
+                                        {/* Marcador */}
+                                        <div className="px-3 text-center font-mono font-black text-emerald-400 text-base sm:text-lg shrink-0">
+                                            {match.homeScore} - {match.awayScore}
+                                        </div>
+
+                                        {/* Equipo Visitante */}
+                                        <TeamLink
+                                            slug={match.awayTeam.slug}
+                                            name={match.awayTeam.name}
+                                            className="group/team flex-1 flex items-center justify-start gap-2.5 min-w-0"
+                                        >
+                                            <TeamCrest name={match.awayTeam.name} crestUrl={match.awayTeam.crestUrl} size={28} />
+                                            <span className="font-bold text-sm sm:text-base text-slate-100 group-hover/team:text-emerald-400 transition-colors truncate text-left">
+                                                {match.awayTeam.shortName || match.awayTeam.name}
+                                            </span>
+                                        </TeamLink>
                                     </div>
                                 </div>
-
-                                {/* Contenedor de marcador y escudos */}
-                                <div className="flex items-center justify-between py-1 gap-2">
-                                    {/* Equipo Local */}
-                                    <div className="flex-1 flex items-center justify-end gap-2.5 min-w-0">
-                                        <span className="font-bold text-sm sm:text-base text-slate-100 group-hover:text-white truncate text-right">
-                                            {match.homeTeam.shortName || match.homeTeam.name}
-                                        </span>
-                                        {match.homeTeam.crestUrl ? (
-                                            <Image
-                                                src={match.homeTeam.crestUrl}
-                                                alt={match.homeTeam.name}
-                                                width={28}
-                                                height={28}
-                                                className="object-contain shrink-0"
-                                            />
-                                        ) : (
-                                            <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
-                                                {match.homeTeam.name.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Marcador */}
-                                    <div className="px-3 text-center font-mono font-black text-emerald-400 text-base sm:text-lg shrink-0">
-                                        {match.homeScore} - {match.awayScore}
-                                    </div>
-
-                                    {/* Equipo Visitante */}
-                                    <div className="flex-1 flex items-center justify-start gap-2.5 min-w-0">
-                                        {match.awayTeam.crestUrl ? (
-                                            <Image
-                                                src={match.awayTeam.crestUrl}
-                                                alt={match.awayTeam.name}
-                                                width={28}
-                                                height={28}
-                                                className="object-contain shrink-0"
-                                            />
-                                        ) : (
-                                            <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">
-                                                {match.awayTeam.name.charAt(0)}
-                                            </div>
-                                        )}
-                                        <span className="font-bold text-sm sm:text-base text-slate-100 group-hover:text-white truncate text-left">
-                                            {match.awayTeam.shortName || match.awayTeam.name}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Link>
+                            </article>
                         ))}
                     </div>
                 )}
