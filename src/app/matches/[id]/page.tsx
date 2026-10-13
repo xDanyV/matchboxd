@@ -6,6 +6,8 @@ import { auth } from '@/auth';
 import RateButton from '@/components/matches/RateButton';
 import ReviewSection from '@/components/matches/ReviewSection';
 import WatchlistButton from '@/components/matches/WatchlistButton';
+import TeamCrest from '@/components/teams/TeamCrest';
+import TeamLink from '@/components/teams/TeamLink';
 import {
     Star,
     Calendar,
@@ -39,8 +41,8 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
             },
             reviews: {
                 include: {
-                    user: true,
-                    match: { // 👈 Asegúrate de incluir esto para que el modal tenga los datos del partido
+                    user: { select: { name: true, username: true, image: true } },
+                    match: { 
                         include: {
                             homeTeam: true,
                             awayTeam: true,
@@ -158,23 +160,22 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center py-2">
                         {/* Equipo Local */}
                         <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3 text-center md:text-left">
-                            {match.homeTeam.crestUrl ? (
-                                <Image
-                                    src={match.homeTeam.crestUrl}
-                                    alt={match.homeTeam.name}
-                                    width={56}
-                                    height={56}
-                                    className="object-contain shrink-0"
-                                />
-                            ) : (
-                                <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-xl font-bold text-slate-400 shrink-0">
-                                    {match.homeTeam.name.charAt(0)}
-                                </div>
-                            )}
+                            <TeamLink
+                                slug={match.homeTeam.slug}
+                                name={match.homeTeam.name}
+                                className="shrink-0 transition-transform hover:scale-105"
+                            >
+                                <TeamCrest name={match.homeTeam.name} crestUrl={match.homeTeam.crestUrl} size={56} />
+                            </TeamLink>
                             <div className="space-y-0.5">
                                 <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Local</span>
                                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                                    {match.homeTeam.name}
+                                    <Link
+                                        href={`/teams/${match.homeTeam.slug}`}
+                                        className="hover:text-emerald-400 transition-colors"
+                                    >
+                                        {match.homeTeam.name}
+                                    </Link>
                                 </h1>
                             </div>
                         </div>
@@ -194,23 +195,22 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
                         {/* Equipo Visitante */}
                         <div className="flex flex-col md:flex-row-reverse items-center justify-center md:justify-start gap-3 text-center md:text-right">
-                            {match.awayTeam.crestUrl ? (
-                                <Image
-                                    src={match.awayTeam.crestUrl}
-                                    alt={match.awayTeam.name}
-                                    width={56}
-                                    height={56}
-                                    className="object-contain shrink-0"
-                                />
-                            ) : (
-                                <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-xl font-bold text-slate-400 shrink-0">
-                                    {match.awayTeam.name.charAt(0)}
-                                </div>
-                            )}
+                            <TeamLink
+                                slug={match.awayTeam.slug}
+                                name={match.awayTeam.name}
+                                className="shrink-0 transition-transform hover:scale-105"
+                            >
+                                <TeamCrest name={match.awayTeam.name} crestUrl={match.awayTeam.crestUrl} size={56} />
+                            </TeamLink>
                             <div className="space-y-0.5">
                                 <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Visitante</span>
                                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                                    {match.awayTeam.name}
+                                    <Link
+                                        href={`/teams/${match.awayTeam.slug}`}
+                                        className="hover:text-emerald-400 transition-colors"
+                                    >
+                                        {match.awayTeam.name}
+                                    </Link>
                                 </h2>
                             </div>
                         </div>

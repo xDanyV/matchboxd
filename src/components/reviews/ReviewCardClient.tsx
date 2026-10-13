@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Star, Heart, Calendar, MessageSquare } from 'lucide-react';
 import ReviewCommentsModal from './ReviewCommentsModal';
+import TeamCrest from '@/components/teams/TeamCrest';
+import TeamLink from '@/components/teams/TeamLink';
 
 interface ReviewCardClientProps {
     review: any;
@@ -12,6 +13,36 @@ interface ReviewCardClientProps {
     formattedDate: string;
     likesCount: number;
     dislikesCount: number;
+}
+
+function TeamChip({
+    team,
+    fallback,
+    crestAfter = false,
+}: {
+    team: any;
+    fallback: string;
+    crestAfter?: boolean;
+}) {
+    const label = team.shortName || team.name || fallback;
+
+    const content = (
+        <>
+            {!crestAfter && <TeamCrest name={label} crestUrl={team.crestUrl} size={24} className="rounded-md" />}
+            <span className="group-hover/team:text-emerald-400 transition-colors">{label}</span>
+            {crestAfter && <TeamCrest name={label} crestUrl={team.crestUrl} size={24} className="rounded-md" />}
+        </>
+    );
+
+    if (!team.slug) {
+        return <div className="flex items-center gap-2">{content}</div>;
+    }
+
+    return (
+        <TeamLink slug={team.slug} name={team.name || label} className="group/team flex items-center gap-2">
+            {content}
+        </TeamLink>
+    );
 }
 
 export default function ReviewCardClient({
@@ -36,40 +67,19 @@ export default function ReviewCardClient({
             <article className="bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 sm:p-6 transition-all space-y-4 backdrop-blur-sm">
                 {/* Cabecera del Partido */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
-                    <Link
-                        href={match.id ? `/matches/${match.id}` : '#'}
-                        className="flex items-center gap-3 group/item hover:opacity-90 transition-opacity"
-                    >
-                        <div className="flex items-center gap-2 font-bold text-slate-100 text-sm sm:text-base">
-                            {homeTeam.crestUrl && (
-                                <Image
-                                    src={homeTeam.crestUrl}
-                                    alt={homeTeam.name || 'Local'}
-                                    width={24}
-                                    height={24}
-                                    className="object-contain"
-                                />
-                            )}
-                            <span className="group-hover/item:text-emerald-400 transition-colors">
-                                {homeTeam.shortName || homeTeam.name || 'Local'}
-                            </span>
-                            <span className="bg-slate-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-400">
-                                {match.homeScore ?? 0} - {match.awayScore ?? 0}
-                            </span>
-                            <span className="group-hover/item:text-emerald-400 transition-colors">
-                                {awayTeam.shortName || awayTeam.name || 'Visitante'}
-                            </span>
-                            {awayTeam.crestUrl && (
-                                <Image
-                                    src={awayTeam.crestUrl}
-                                    alt={awayTeam.name || 'Visitante'}
-                                    width={24}
-                                    height={24}
-                                    className="object-contain"
-                                />
-                            )}
-                        </div>
-                    </Link>
+                    <div className="flex items-center gap-2 font-bold text-slate-100 text-sm sm:text-base">
+                        <TeamChip team={homeTeam} fallback="Local" />
+
+                        <Link
+                            href={match.id ? `/matches/${match.id}` : '#'}
+                            title="Ver partido"
+                            className="bg-slate-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-400 hover:bg-slate-700 transition-colors"
+                        >
+                            {match.homeScore ?? 0} - {match.awayScore ?? 0}
+                        </Link>
+
+                        <TeamChip team={awayTeam} fallback="Visitante" crestAfter />
+                    </div>
 
                     <div className="flex items-center gap-3 text-xs text-slate-400">
                         {competition.name && (
