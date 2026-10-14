@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut } from 'lucide-react';
 import { auth, signIn, signOut } from '@/auth';
+import GlobalSearch from '@/components/search/GlobalSearch';
 
 export default async function Navbar() {
     const session = await auth();
@@ -22,13 +23,17 @@ export default async function Navbar() {
                     </Link>
 
                     {/* Enlaces y Estado de Sesión */}
-                    <nav className="flex items-center gap-2 sm:gap-4">
+                    <nav className="flex items-center gap-1 sm:gap-4">
+                        <GlobalSearch />
+
                         <Link
                             href="/matches"
+                            title="Top Partidos"
+                            aria-label="Top Partidos"
                             className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-200 hover:text-amber-400 hover:bg-slate-900/70 transition-all"
                         >
                             <Flame className="w-4.5 h-4.5 text-amber-400 shrink-0 fill-amber-400/20" />
-                            <span>Top Partidos</span>
+                            <span className="hidden sm:inline">Top Partidos</span>
                         </Link>
 
                         <Link
@@ -43,10 +48,12 @@ export default async function Navbar() {
                         {session?.user && (
                             <Link
                                 href="/reviews"
+                                title="Mis Reseñas"
+                                aria-label="Mis Reseñas"
                                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-emerald-400 hover:bg-slate-900/70 transition-all"
                             >
                                 <MessageSquare className="w-4.5 h-4.5 text-slate-400 shrink-0" />
-                                <span>Mis Reseñas</span>
+                                <span className="hidden sm:inline">Mis Reseñas</span>
                             </Link>
                         )}
 
