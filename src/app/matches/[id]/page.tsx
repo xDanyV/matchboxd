@@ -6,8 +6,10 @@ import { auth } from '@/auth';
 import RateButton from '@/components/matches/RateButton';
 import ReviewSection from '@/components/matches/ReviewSection';
 import WatchlistButton from '@/components/matches/WatchlistButton';
+import MatchTimeline from '@/components/matches/MatchTimeline';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
+import type { TimelineEvent } from '@/lib/match-events';
 import {
     Star,
     Calendar,
@@ -42,7 +44,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
             reviews: {
                 include: {
                     user: { select: { name: true, username: true, image: true } },
-                    match: { 
+                    match: {
                         include: {
                             homeTeam: true,
                             awayTeam: true,
@@ -74,6 +76,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                 include: {
                     player: true,
                 },
+            },
+            events: {
+                orderBy: { sortOrder: 'asc' },
             },
         },
     });
@@ -113,6 +118,24 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
     });
 
     const mvpList = Object.values(mvpCounts).sort((a, b) => b.count - a.count);
+
+    // Eventos de la línea de tiempo (solo los que pertenecen a alguno de los dos equipos)
+    const timelineEvents = match.events.flatMap((event): TimelineEvent[] => {
+        if (event.teamId !== match.homeTeamId && event.teamId !== match.awayTeamId) return [];
+
+        return [
+            {
+                id: event.id,
+                kind: event.type,
+                side: event.teamId === match.homeTeamId ? 'home' : 'away',
+                minute: event.minute,
+                extraMinute: event.extraMinute,
+                playerName: event.playerName,
+                relatedPlayerName: event.relatedPlayerName,
+                detail: event.detail,
+            },
+        ];
+    });
 
     return (
         <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
@@ -340,6 +363,17 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         )}
                     </div>
                 </div>
+
+                {/* Línea de tiempo del partido */}
+                {timelineEvents.length > 0 && (
+                    <MatchTimeline
+                        events={timelineEvents}
+                        homeTeam={{ name: match.homeTeam.name, crestUrl: match.homeTeam.crestUrl }}
+                        awayTeam={{ name: match.awayTeam.name, crestUrl: match.awayTeam.crestUrl }}
+                        homeScore={match.homeScore}
+                        awayScore={match.awayScore}
+                    />
+                )}
 
                 {/* Muro de Reseñas Interactivo */}
                 <ReviewSection

@@ -110,6 +110,7 @@ async function main() {
 
                 await prisma.match.create({
                     data: {
+                        apiId: fixture.id,
                         date: new Date(fixture.date),
                         homeTeamId: homeTeam.id,
                         awayTeamId: awayTeam.id,

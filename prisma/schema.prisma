@@ -104,11 +104,12 @@ model Team {
   venueCapacity Int?
   venueImageUrl String?
 
-  homeMatches Match[]  @relation("HomeTeam")
-  awayMatches Match[]  @relation("AwayTeam")
+  homeMatches Match[]      @relation("HomeTeam")
+  awayMatches Match[]      @relation("AwayTeam")
   players     Player[]
   users       User[]
-  fans        User[]   @relation("FavoriteTeam")
+  fans        User[]       @relation("FavoriteTeam")
+  matchEvents MatchEvent[]
 
   @@map("teams")
 }
@@ -121,7 +122,7 @@ model Player {
   teamId   String?
   number   Int?
 
-  team     Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   mvpVotes MvpVote[]
 
@@ -133,6 +134,7 @@ model Player {
 // -------------------------------------------------------------
 model Match {
   id        String   @id @default(cuid())
+  apiId     Int?     @unique // id del partido (fixture) en API-Football
   date      DateTime
   homeScore Int
   awayScore Int
@@ -155,6 +157,7 @@ model Match {
   reviews   Review[]
   mvpVotes  MvpVote[]
   watchlist Watchlist[]
+  events    MatchEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,6 +165,46 @@ model Match {
   @@index([competitionId])
   @@index([date])
   @@map("matches")
+}
+
+// -------------------------------------------------------------
+// EVENTOS DEL PARTIDO (LÍNEA DE TIEMPO)
+// -------------------------------------------------------------
+enum MatchEventType {
+  GOAL
+  PENALTY_GOAL
+  OWN_GOAL
+  MISSED_PENALTY
+  YELLOW_CARD
+  SECOND_YELLOW
+  RED_CARD
+  SUBSTITUTION
+  VAR
+}
+
+model MatchEvent {
+  id          String         @id @default(cuid())
+  type        MatchEventType
+  minute      Int
+  extraMinute Int?
+  sortOrder   Int
+
+  // Goles: goleador. Tarjetas: jugador amonestado. Cambios: jugador que ENTRA.
+  playerName        String?
+  // Goles: asistente. Cambios: jugador que SALE.
+  relatedPlayerName String?
+  detail            String?
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  // Equipo al que se acredita el evento (en un gol en propia puerta, el equipo que anota)
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, sortOrder])
+  @@index([matchId])
+  @@map("match_events")
 }
 
 // -------------------------------------------------------------
