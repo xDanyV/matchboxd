@@ -8,7 +8,7 @@ export default async function Navbar() {
     const session = await auth();
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+        <header className="sticky top-0 z-50 w-full bg-slate-950/90 backdrop-blur-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20 gap-4 sm:gap-8">
 
@@ -106,10 +106,11 @@ export default async function Navbar() {
                             >
                                 <button
                                     type="submit"
-                                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all active:scale-95 shadow-lg shadow-emerald-500/10"
+                                    aria-label="Ingresar"
+                                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all active:scale-95"
                                 >
                                     <LogIn className="w-4 h-4" />
-                                    <span>Ingresar</span>
+                                    <span className="hidden sm:inline">Ingresar</span>
                                 </button>
                             </form>
                         )}

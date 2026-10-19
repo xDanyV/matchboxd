@@ -143,7 +143,7 @@ export default function GlobalSearch() {
                 className="flex items-center gap-2 h-10 px-3 rounded-xl text-slate-300 hover:text-emerald-400 hover:bg-slate-900/70 transition-all xl:w-56 xl:border xl:border-slate-800 xl:bg-slate-900/60"
             >
                 <Search className="w-4.5 h-4.5 shrink-0" />
-                <span className="hidden xl:inline text-sm text-slate-500">Buscar…</span>
+                <span className="hidden xl:inline text-sm text-slate-300">Buscar…</span>
                 <kbd className="hidden xl:inline ml-auto rounded border border-slate-700 px-1.5 text-[10px] font-mono text-slate-500">
                     /
                 </kbd>
@@ -295,7 +295,7 @@ export default function GlobalSearch() {
                                                                 className="rounded-md"
                                                             />
                                                             <span className="truncate">{match.homeTeam.name}</span>
-                                                            <span className="font-mono text-xs text-emerald-400 shrink-0">
+                                                            <span className="tabular-nums text-xs text-emerald-400 shrink-0">
                                                                 {match.homeScore} - {match.awayScore}
                                                             </span>
                                                             <span className="truncate">{match.awayTeam.name}</span>
