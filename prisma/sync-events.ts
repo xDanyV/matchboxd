@@ -6,6 +6,8 @@ const API_KEY = process.env.FOOTBALL_API_KEY;
 const API_BASE = 'https://v3.football.api-sports.io';
 const CHAMPIONS_LEAGUE_ID = 2;
 const REQUEST_DELAY_MS = 7000;
+const RATE_LIMIT_WAIT_MS = 65_000;
+const MAX_RATE_LIMIT_RETRIES = 2;
 const DATE_TOLERANCE_MS = 36 * 60 * 60 * 1000;
 
 /**
@@ -47,13 +49,21 @@ interface DraftEvent {
     order: number;
 }
 
+/** Se agotó la cuota diaria de la API: no tiene sentido seguir pidiendo datos. */
+class QuotaError extends Error { }
+
+const quota: { day: string | null } = { day: null };
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const opposite = (side: Side): Side => (side === 'home' ? 'away' : 'home');
 
-async function apiGet<T>(path: string): Promise<T[]> {
+async function apiGet<T>(path: string, attempt = 0): Promise<T[]> {
     const res = await fetch(`${API_BASE}${path}`, {
         headers: { 'x-apisports-key': API_KEY! },
     });
+
+    // Si la API no envía esta cabecera, simplemente no se muestra
+    quota.day = res.headers.get('x-ratelimit-requests-remaining');
 
     if (!res.ok) {
         throw new Error(`HTTP ${res.status} en ${path}`);
@@ -62,12 +72,22 @@ async function apiGet<T>(path: string): Promise<T[]> {
     const data = await res.json();
 
     // API-Football responde 200 incluso con errores (límite, plan, parámetros)
-    const errors = data.errors;
-    const hasErrors = Array.isArray(errors)
-        ? errors.length > 0
-        : errors && Object.keys(errors).length > 0;
+    const errors: unknown = data.errors;
+    const errorKeys = errors && typeof errors === 'object' ? Object.keys(errors) : [];
 
-    if (hasErrors) {
+    if (errorKeys.length > 0) {
+        if (errorKeys.includes('rateLimit') && attempt < MAX_RATE_LIMIT_RETRIES) {
+            console.warn(
+                `  ⏳ Límite por minuto alcanzado. Esperando ${RATE_LIMIT_WAIT_MS / 1000}s para reintentar...`
+            );
+            await sleep(RATE_LIMIT_WAIT_MS);
+            return apiGet<T>(path, attempt + 1);
+        }
+
+        if (errorKeys.includes('requests')) {
+            throw new QuotaError('Cuota diaria de la API agotada.');
+        }
+
         throw new Error(`La API devolvió errores en ${path}: ${JSON.stringify(errors)}`);
     }
 
@@ -254,7 +274,7 @@ async function backfillFixtureIds() {
 
     if (missing.length === 0) {
         console.log('✔ Todos los partidos ya tienen su id de la API.');
-        return;
+        return false;
     }
 
     const years = Array.from(
@@ -313,6 +333,7 @@ async function backfillFixtureIds() {
     }
 
     console.log(`✔ Partidos enlazados con la API: ${linked}/${missing.length}`);
+    return true;
 }
 
 async function syncEvents() {
@@ -340,27 +361,48 @@ async function syncEvents() {
         return;
     }
 
-    console.log(`\n📋 Partidos a sincronizar: ${pending.length} (≈ ${Math.ceil((pending.length * REQUEST_DELAY_MS) / 60000)} min)`);
+    console.log(
+        `\n📋 Partidos a sincronizar: ${pending.length} (≈ ${Math.ceil((pending.length * REQUEST_DELAY_MS) / 60000)} min)`
+    );
 
     const warnings: string[] = [];
+    const warn = (message: string) => {
+        warnings.push(message);
+        console.warn(`  ⚠️ ${message}`);
+    };
+
     let synced = 0;
+    let processed = 0;
+    let stoppedByQuota = false;
 
     for (let i = 0; i < pending.length; i++) {
         const match = pending[i];
         if (i > 0) await sleep(REQUEST_DELAY_MS);
 
         const label = `${match.homeTeam.name} ${match.homeScore}-${match.awayScore} ${match.awayTeam.name}`;
+        const progress = `[${i + 1}/${pending.length}]`;
 
         if (!match.apiId || !match.homeTeam.apiId || !match.awayTeam.apiId) {
-            warnings.push(`${label}: faltan ids de la API (partido o equipos).`);
+            processed += 1;
+            warn(`${label}: faltan ids de la API (partido o equipos).`);
             continue;
         }
 
-        const events = await apiGet<ApiEvent>(`/fixtures/events?fixture=${match.apiId}`);
+        let events: ApiEvent[];
+        try {
+            events = await apiGet<ApiEvent>(`/fixtures/events?fixture=${match.apiId}`);
+        } catch (error) {
+            if (error instanceof QuotaError) {
+                stoppedByQuota = true;
+                break;
+            }
+            throw error;
+        }
+
+        processed += 1;
 
         if (events.length === 0) {
-            warnings.push(`${label}: la API no devolvió eventos (puede no tener cobertura).`);
-            console.log(`  ⚠️ ${label}: sin eventos`);
+            warn(`${label}: la API no devolvió eventos (puede no tener cobertura).`);
             continue;
         }
 
@@ -371,7 +413,7 @@ async function syncEvents() {
         );
 
         if (drafts.length === 0) {
-            warnings.push(`${label}: ningún evento reconocido (${skipped} sin mapear).`);
+            warn(`${label}: ningún evento reconocido (${skipped} sin mapear).`);
             continue;
         }
 
@@ -404,20 +446,27 @@ async function syncEvents() {
         if (shootout > 0) notes.push(`${shootout} de tanda ignorados`);
 
         console.log(
-            `  ✔ ${label}: ${rows.length} eventos${notes.length ? ` (${notes.join(', ')})` : ''}`
+            `  ✔ ${progress} ${label}: ${rows.length} eventos${notes.length ? ` (${notes.join(', ')})` : ''}`
         );
 
         if (!resolved.consistent) {
-            warnings.push(
+            warn(
                 `${label}: los goles de la API suman ${resolved.derived.home}-${resolved.derived.away} y el marcador guardado es ${match.homeScore}-${match.awayScore}. La página ocultará los marcadores parciales.`
             );
         }
     }
 
-    console.log(`\n✅ Partidos sincronizados: ${synced}/${pending.length}`);
+    console.log(`\n✅ Partidos sincronizados en esta corrida: ${synced}/${pending.length}`);
+
+    if (stoppedByQuota) {
+        const remaining = pending.length - processed;
+        console.log(`\n⏸️  Cuota diaria de la API agotada. Quedan ${remaining} partido(s) pendientes.`);
+        console.log('   El avance ya está guardado. Vuelve a ejecutar "npm run sync:events" cuando la');
+        console.log('   cuota se renueve: solo procesará los pendientes (no uses --force).');
+    }
 
     if (warnings.length > 0) {
-        console.log('\n⚠️  Avisos:');
+        console.log(`\n⚠️  Avisos de esta corrida (${warnings.length}):`);
         warnings.forEach((warning) => console.log(`  - ${warning}`));
     }
 }
@@ -438,9 +487,22 @@ async function main() {
         return;
     }
 
-    await backfillFixtureIds();
-    await sleep(REQUEST_DELAY_MS);
-    await syncEvents();
+    try {
+        const requested = await backfillFixtureIds();
+        if (requested) await sleep(REQUEST_DELAY_MS);
+        await syncEvents();
+    } catch (error) {
+        if (error instanceof QuotaError) {
+            console.log('\n⏸️  Cuota diaria de la API agotada. El avance ya está guardado.');
+            console.log('   Vuelve a ejecutar "npm run sync:events" cuando la cuota se renueve.');
+        } else {
+            throw error;
+        }
+    }
+
+    if (quota.day !== null) {
+        console.log(`\nPeticiones restantes hoy en la API: ${quota.day}`);
+    }
 }
 
 main()

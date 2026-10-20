@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { sanitizeReviewTags } from '@/lib/review-tags';
 
 interface SubmitReviewInput {
     matchId: string;
@@ -11,6 +12,7 @@ interface SubmitReviewInput {
     content: string;
     hasSpoilers?: boolean;
     mvpPlayerId?: string;
+    tags?: string[];
 }
 
 export async function submitReview(data: SubmitReviewInput) {
@@ -30,6 +32,9 @@ export async function submitReview(data: SubmitReviewInput) {
         throw new Error('El contenido de la reseña no puede estar vacio.');
     }
 
+    // Etiquetas: se validan en el servidor (catálogo, máximo y opuestas)
+    const tags = data.tags === undefined ? undefined : sanitizeReviewTags(data.tags);
+
     // 1. Guardar o actualizar la reseña
     const review = await prisma.review.upsert({
         where: {
@@ -43,6 +48,7 @@ export async function submitReview(data: SubmitReviewInput) {
             title: data.title?.trim() || null,
             content: data.content.trim(),
             hasSpoilers: data.hasSpoilers || false,
+            ...(tags !== undefined ? { tags } : {}),
         },
         create: {
             userId,
@@ -51,6 +57,7 @@ export async function submitReview(data: SubmitReviewInput) {
             title: data.title?.trim() || null,
             content: data.content.trim(),
             hasSpoilers: data.hasSpoilers || false,
+            tags: tags ?? [],
         },
     });
 

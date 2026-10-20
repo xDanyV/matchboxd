@@ -27,7 +27,7 @@ export default async function TopMatchesPage() {
                 homeTeam: true,
                 awayTeam: true,
                 competition: true,
-                reviews: { select: { rating: true } },
+                reviews: { select: { rating: true, tags: true } },
                 _count: { select: { reviews: true } },
             },
         })

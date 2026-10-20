@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "enrich:teams": "tsx --env-file=.env prisma/enrich-teams.ts",
-    "sync:events": "tsx --env-file=.env prisma/sync-events.ts"
+    "sync:events": "tsx --env-file=.env prisma/sync-events.ts",
+    "seed": "tsx --env-file=.env prisma/seed.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

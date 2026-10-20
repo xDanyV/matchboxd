@@ -9,6 +9,8 @@ import WatchlistButton from '@/components/matches/WatchlistButton';
 import MatchTimeline from '@/components/matches/MatchTimeline';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
+import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
+import { summarizeReviewTags } from '@/lib/review-tags';
 import type { TimelineEvent } from '@/lib/match-events';
 import {
     Star,
@@ -102,6 +104,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
     const totalRating = match!.reviews.reduce((acc, r) => acc + r.rating, 0);
     const avgRating = match!.reviews.length > 0 ? (totalRating / match!.reviews.length).toFixed(1) : null;
 
+    // Etiquetas de la comunidad (conteo por etiqueta y etiqueta principal)
+    const tagSummary = summarizeReviewTags(match.reviews);
+
     const formattedDate = new Intl.DateTimeFormat('es-MX', {
         dateStyle: 'full',
     }).format(new Date(match!.date));
@@ -172,12 +177,24 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             </span>
                         </div>
 
-                        {match.isIconic && (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1 rounded-full">
-                                <Sparkles className="w-3.5 h-3.5" />
-                                <span>Partido Icónico</span>
-                            </span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {tagSummary.leading.slice(0, 3).map((slug) => (
+                                <ReviewTagChip
+                                    key={slug}
+                                    slug={slug}
+                                    size="md"
+                                    highlight
+                                    title="Etiqueta más votada por la comunidad"
+                                />
+                            ))}
+
+                            {match.isIconic && (
+                                <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1 rounded-full">
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>Partido Icónico</span>
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center py-2">
@@ -291,6 +308,25 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             <p className="text-xs text-slate-400 mt-2">
                                 Basado en {match.reviews.length} {match.reviews.length === 1 ? 'reseña' : 'reseñas'}
                             </p>
+
+                            {/* Etiquetas de la comunidad */}
+                            {tagSummary.counts.length > 0 && (
+                                <div className="mt-4 space-y-2">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                        Etiquetas de la comunidad
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {tagSummary.counts.slice(0, 5).map((item) => (
+                                            <ReviewTagChip
+                                                key={item.slug}
+                                                slug={item.slug}
+                                                count={item.count}
+                                                highlight={item.slug === tagSummary.main}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <RateButton

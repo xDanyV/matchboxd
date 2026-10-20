@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Star, X, Sparkles, Loader2, AlertCircle, User } from 'lucide-react';
 import { submitReview } from '@/app/actions/review';
+import ReviewTagPicker from '@/components/reviews/ReviewTagPicker';
+import type { ReviewTagSlug } from '@/lib/review-tags';
 
 interface Player {
     id: string;
@@ -49,6 +51,7 @@ export default function ReviewModal({
     const [content, setContent] = useState('');
     const [mvpPlayerId, setMvpPlayerId] = useState('');
     const [hasSpoilers, setHasSpoilers] = useState(false);
+    const [tags, setTags] = useState<ReviewTagSlug[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     // Estado para alternar el equipo en el selector de MVP ("home" | "away")
@@ -75,6 +78,7 @@ export default function ReviewModal({
                     title,
                     content,
                     hasSpoilers,
+                    tags,
                     mvpPlayerId: mvpPlayerId || undefined,
                 });
                 onClose();
@@ -150,6 +154,9 @@ export default function ReviewModal({
                         </div>
                     </div>
 
+                    {/* Etiquetas del partido */}
+                    <ReviewTagPicker value={tags} onChange={setTags} disabled={isPending} />
+
                     {/* Selector de MVP interactivo por Equipos */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
@@ -163,8 +170,8 @@ export default function ReviewModal({
                                 type="button"
                                 onClick={() => setSelectedTeamTab('home')}
                                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${selectedTeamTab === 'home'
-                                        ? 'bg-slate-800 text-white shadow-md'
-                                        : 'text-slate-400 hover:text-slate-200'
+                                    ? 'bg-slate-800 text-white shadow-md'
+                                    : 'text-slate-400 hover:text-slate-200'
                                     }`}
                             >
                                 {homeTeam.crestUrl && (
@@ -183,8 +190,8 @@ export default function ReviewModal({
                                 type="button"
                                 onClick={() => setSelectedTeamTab('away')}
                                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${selectedTeamTab === 'away'
-                                        ? 'bg-slate-800 text-white shadow-md'
-                                        : 'text-slate-400 hover:text-slate-200'
+                                    ? 'bg-slate-800 text-white shadow-md'
+                                    : 'text-slate-400 hover:text-slate-200'
                                     }`}
                             >
                                 {awayTeam.crestUrl && (
@@ -210,8 +217,8 @@ export default function ReviewModal({
                                             key={player.id}
                                             onClick={() => setMvpPlayerId(isSelected ? '' : player.id)}
                                             className={`flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer ${isSelected
-                                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
-                                                    : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+                                                : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700'
                                                 }`}
                                         >
                                             {player.photoUrl ? (

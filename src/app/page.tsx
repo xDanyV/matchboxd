@@ -48,7 +48,7 @@ async function MatchesSection({
         homeTeam: true,
         awayTeam: true,
         competition: true,
-        reviews: { select: { rating: true } },
+        reviews: { select: { rating: true, tags: true } },
         _count: { select: { reviews: true } },
       },
       orderBy: { date: 'desc' },
@@ -215,8 +215,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     scroll={false}
                     aria-current={isActive ? 'page' : undefined}
                     className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${isActive
-                        ? 'bg-emerald-500 text-slate-950'
-                        : 'bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
+                      ? 'bg-emerald-500 text-slate-950'
+                      : 'bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
                       }`}
                   >
                     <Calendar
