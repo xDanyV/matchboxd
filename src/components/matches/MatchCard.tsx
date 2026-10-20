@@ -1,10 +1,9 @@
-'use client';
-
 import Link from 'next/link';
-import { MotionConfig, motion } from 'motion/react';
-import { Star, CalendarDays, MessageSquare } from 'lucide-react';
+import { Star, Sparkles, Calendar, MessageSquare } from 'lucide-react';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
+import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
+import { summarizeReviewTags } from '@/lib/review-tags';
 
 interface MatchCardTeam {
     name: string;
@@ -25,39 +24,33 @@ interface MatchCardProps {
         isIconic?: boolean;
         tags?: string[];
         averageRating?: number | null;
+        reviews?: { tags?: string[] | null }[];
         _count?: { reviews: number };
     };
 }
 
-function TeamBlock({ team, side }: { team: MatchCardTeam; side: 'home' | 'away' }) {
+function TeamRow({ team, score }: { team: MatchCardTeam; score: number }) {
     return (
-        <motion.div
-            initial={{ x: side === 'home' ? -12 : 12, y: 6 }}
-            whileInView={{ x: 0, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{
-                duration: 0.45,
-                delay: side === 'home' ? 0.08 : 0.16,
-                ease: [0.22, 1, 0.36, 1],
-            }}
-            className="flex min-w-0 flex-col items-center gap-4 text-center"
-        >
+        <div className="flex items-center justify-between gap-3">
             <TeamLink
                 slug={team.slug}
                 name={team.name}
-                className="group/team flex min-w-0 flex-col items-center gap-4"
+                className="group/team flex items-center gap-3 min-w-0"
             >
                 <TeamCrest
                     name={team.name}
                     crestUrl={team.crestUrl}
-                    size={56}
-                    className="transition-transform duration-300 group-hover/team:scale-110"
+                    size={40}
+                    className="group-hover/team:scale-110 transition-transform duration-300"
                 />
-                <span className="line-clamp-2 min-h-10 text-sm font-bold leading-snug text-white transition-colors group-hover/team:text-emerald-400 sm:text-base">
+                <span className="text-base sm:text-lg font-black text-white group-hover/team:text-emerald-400 transition-colors truncate">
                     {team.name}
                 </span>
             </TeamLink>
-        </motion.div>
+            <span className="text-2xl font-mono font-black text-emerald-400 shrink-0 ml-2">
+                {score}
+            </span>
+        </div>
     );
 }
 
@@ -68,87 +61,71 @@ export default function MatchCard({ match }: MatchCardProps) {
         year: 'numeric',
     }).format(new Date(match.date));
 
-    return (
-        <MotionConfig reducedMotion="user">
-          <motion.article
-              initial={{ y: 18 }}
-              whileInView={{ y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              whileHover={{ y: -5 }}
-              whileTap={{ scale: 0.99 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              data-ui="match-card"
-              className="group relative min-h-[21rem] overflow-hidden rounded-3xl bg-slate-900 p-5 sm:min-h-[22rem] sm:p-6"
-          >
-            <svg
-                aria-hidden="true"
-                viewBox="0 0 640 400"
-                preserveAspectRatio="xMidYMid slice"
-                className="pointer-events-none absolute inset-0 h-full w-full text-slate-500 opacity-[0.12]"
-            >
-                <rect x="1" y="1" width="638" height="398" rx="42" fill="none" stroke="currentColor" strokeWidth="2" />
-                <path d="M320 1v398M1 100h105v200H1m638-200H534v200h105M1 145h48v110H1m638-110h-48v110h48" fill="none" stroke="currentColor" strokeWidth="2" />
-                <circle cx="320" cy="200" r="70" fill="none" stroke="currentColor" strokeWidth="2" />
-                <circle cx="320" cy="200" r="3" fill="currentColor" />
-            </svg>
+    const leadingTags = summarizeReviewTags(match.reviews ?? []).leading.slice(0, 2);
 
+    return (
+        <article className="group relative overflow-hidden rounded-3xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 p-6 sm:p-7 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/5 hover:-translate-y-1">
+            {/* Enlace al partido: cubre toda la tarjeta */}
             <Link
                 href={`/matches/${match.id}`}
                 aria-label={`Ver partido: ${match.homeTeam.name} vs ${match.awayTeam.name}`}
-                className="absolute inset-0 z-0 rounded-[2rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                className="absolute inset-0 z-0"
             />
 
-            <div className="pointer-events-none relative z-10 flex h-full min-h-[18.5rem] flex-col justify-between sm:min-h-[19.5rem]">
-                <div className="flex min-h-8 items-center justify-between gap-2">
-                    <span className="truncate text-xs font-semibold text-slate-300 sm:text-sm">
-                        {match.stage || 'Partido'} <span className="text-slate-500">·</span> {match.season}
+            {/* Contenido: deja pasar los clics al enlace, salvo los enlaces de equipo */}
+            <div className="relative z-10 pointer-events-none flex h-full flex-col justify-between space-y-6">
+                {/* Cabecera */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-800/60 pb-3.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
+                        UEFA Champions League • {match.stage || 'Fase de Partidos'}
                     </span>
 
-                    {match.isIconic && (
-                        <span className="inline-flex shrink-0 items-center rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-300">
-                            Icónico
-                        </span>
-                    )}
-                </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {leadingTags.map((slug) => (
+                            <ReviewTagChip
+                                key={slug}
+                                slug={slug}
+                                title="Etiqueta más votada por la comunidad"
+                            />
+                        ))}
 
-                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 py-5 sm:gap-3">
-                    <TeamBlock team={match.homeTeam} side="home" />
-                    <div
-                        role="img"
-                        className="flex items-center gap-0.5 text-3xl font-black tracking-tight text-white sm:gap-1 sm:text-4xl"
-                        aria-label={`Marcador: ${match.homeScore} a ${match.awayScore}`}
-                    >
-                        <span className="tabular-nums">{match.homeScore}</span>
-                        <span className="text-emerald-400">:</span>
-                        <span className="tabular-nums">{match.awayScore}</span>
+                        {match.isIconic && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-300 px-2.5 py-0.5 rounded-full">
+                                <Sparkles className="w-3 h-3" />
+                                <span>Icónico</span>
+                            </span>
+                        )}
                     </div>
-                    <TeamBlock team={match.awayTeam} side="away" />
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3 text-xs font-medium text-slate-300 sm:text-sm">
-                    <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" />
-                        <span className="font-bold text-white">
+                {/* Equipos y marcador */}
+                <div className="space-y-4 py-1">
+                    <TeamRow team={match.homeTeam} score={match.homeScore} />
+                    <TeamRow team={match.awayTeam} score={match.awayScore} />
+                </div>
+
+                {/* Pie */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800/60 text-xs text-slate-400 font-medium">
+                    <div className="flex items-center gap-1.5">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                        <span className="text-white font-bold text-sm">
                             {match.averageRating ? match.averageRating.toFixed(1) : 'S/R'}
                         </span>
-                        <span className="text-slate-400">/ 10</span>
+                        <span className="text-slate-500">/ 10</span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                        <div className="flex items-center gap-1.5">
-                            <MessageSquare className="h-4 w-4 text-slate-400" />
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1 text-slate-400">
+                            <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
                             <span>{match._count?.reviews || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <CalendarDays className="h-4 w-4 text-slate-400" />
-                            <time dateTime={new Date(match.date).toISOString()} className="capitalize">
-                                {formattedDate}
-                            </time>
+                        <div className="flex items-center gap-1 text-slate-400">
+                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                            <span className="capitalize">{formattedDate}</span>
                         </div>
                     </div>
                 </div>
             </div>
-          </motion.article>
-        </MotionConfig>
+        </article>
     );
 }

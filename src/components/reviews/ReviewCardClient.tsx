@@ -6,6 +6,7 @@ import { Star, Heart, Calendar, MessageSquare } from 'lucide-react';
 import ReviewCommentsModal from './ReviewCommentsModal';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
+import { ReviewTagList } from '@/components/reviews/ReviewTagChip';
 
 interface ReviewCardClientProps {
     review: any;
@@ -61,6 +62,7 @@ export default function ReviewCardClient({
     const homeTeam = match.homeTeam || {};
     const awayTeam = match.awayTeam || {};
     const competition = match.competition || {};
+    const tags: string[] = Array.isArray(review.tags) ? review.tags : [];
 
     return (
         <>
@@ -108,6 +110,9 @@ export default function ReviewCardClient({
                         )}
                     </div>
                 </div>
+
+                {/* Etiquetas de la reseña */}
+                {tags.length > 0 && <ReviewTagList tags={tags} />}
 
                 {/* Contenido de la Reseña */}
                 <div className="text-slate-300 text-sm sm:text-base leading-relaxed whitespace-pre-line">

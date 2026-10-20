@@ -211,11 +211,12 @@ model MatchEvent {
 // RESEÑAS, CALIFICACIONES & VOTOS
 // -------------------------------------------------------------
 model Review {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   rating      Float
   title       String?
-  content     String  @db.Text
-  hasSpoilers Boolean @default(false)
+  content     String   @db.Text
+  hasSpoilers Boolean  @default(false)
+  tags        String[] @default([])
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

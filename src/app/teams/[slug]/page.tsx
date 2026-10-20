@@ -29,7 +29,7 @@ const matchInclude = {
     homeTeam: true,
     awayTeam: true,
     competition: true,
-    reviews: { select: { rating: true } },
+    reviews: { select: { rating: true, tags: true } },
     _count: { select: { reviews: true } },
 } satisfies Prisma.MatchInclude;
 
@@ -388,8 +388,8 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                                 href={buildHref(null, 1)}
                                 scroll={false}
                                 className={`inline-flex items-center px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 ${!activeSeason
-                                        ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
-                                        : 'bg-slate-950/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
+                                    : 'bg-slate-950/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                                     }`}
                             >
                                 Todas
@@ -402,8 +402,8 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                                         href={buildHref(s, 1)}
                                         scroll={false}
                                         className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 ${isActive
-                                                ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
-                                                : 'bg-slate-950/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                                            ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
+                                            : 'bg-slate-950/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                                             }`}
                                     >
                                         <Calendar

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { MessageSquare, Star, Heart } from 'lucide-react';
 import ReviewCommentsModal from '@/components/reviews/ReviewCommentsModal';
+import { ReviewTagList } from '@/components/reviews/ReviewTagChip';
 
 interface ReviewSectionProps {
     initialReviews: any[];
@@ -83,6 +84,8 @@ export default function ReviewSection({ initialReviews, currentUserId }: ReviewS
                                 {review.title && (
                                     <h4 className="text-sm font-bold text-white">{review.title}</h4>
                                 )}
+
+                                <ReviewTagList tags={review.tags} />
 
                                 <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
                                     {review.content}
