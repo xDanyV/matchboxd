@@ -72,7 +72,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
     });
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-28">
             {/* Cabecera del perfil */}
             <section className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-sm shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8">

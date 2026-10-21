@@ -182,7 +182,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     const venueLocation = [team.venueCity, team.country].filter(Boolean).join(', ');
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-28">
             {/* Cabecera del equipo */}
             <section className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 sm:p-10 backdrop-blur-sm shadow-xl">
                 <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 text-center sm:text-left">
