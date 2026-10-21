@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, Heart, Calendar, MessageSquare } from 'lucide-react';
+import { Star, Heart, Calendar, MessageSquare, ArrowRight } from 'lucide-react';
 import ReviewCommentsModal from './ReviewCommentsModal';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
@@ -19,28 +19,34 @@ interface ReviewCardClientProps {
 function TeamChip({
     team,
     fallback,
-    crestAfter = false,
+    align = 'left',
 }: {
     team: any;
     fallback: string;
-    crestAfter?: boolean;
+    align?: 'left' | 'right';
 }) {
     const label = team.shortName || team.name || fallback;
 
     const content = (
-        <>
-            {!crestAfter && <TeamCrest name={label} crestUrl={team.crestUrl} size={24} className="rounded-md" />}
-            <span className="group-hover/team:text-emerald-400 transition-colors">{label}</span>
-            {crestAfter && <TeamCrest name={label} crestUrl={team.crestUrl} size={24} className="rounded-md" />}
-        </>
+        <div className={`flex items-center gap-2 min-w-0 flex-1 ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
+            {align === 'left' && (
+                <TeamCrest name={label} crestUrl={team.crestUrl} size={24} className="rounded-md shrink-0" />
+            )}
+            <span className={`font-bold text-slate-100 text-xs sm:text-sm truncate group-hover/team:text-emerald-400 transition-colors ${align === 'right' ? 'text-right' : 'text-left'}`}>
+                {label}
+            </span>
+            {align === 'right' && (
+                <TeamCrest name={label} crestUrl={team.crestUrl} size={24} className="rounded-md shrink-0" />
+            )}
+        </div>
     );
 
     if (!team.slug) {
-        return <div className="flex items-center gap-2">{content}</div>;
+        return content;
     }
 
     return (
-        <TeamLink slug={team.slug} name={team.name || label} className="group/team flex items-center gap-2">
+        <TeamLink slug={team.slug} name={team.name || label} className="group/team flex-1 min-w-0">
             {content}
         </TeamLink>
     );
@@ -51,11 +57,9 @@ export default function ReviewCardClient({
     currentUserId,
     formattedDate,
     likesCount,
-    dislikesCount,
 }: ReviewCardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Verificación de seguridad por si review o match no están definidos
     if (!review) return null;
 
     const match = review.match || {};
@@ -66,45 +70,51 @@ export default function ReviewCardClient({
 
     return (
         <>
-            <article className="bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 sm:p-6 transition-all space-y-4 backdrop-blur-sm">
-                {/* Cabecera del Partido */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
-                    <div className="flex items-center gap-2 font-bold text-slate-100 text-sm sm:text-base">
-                        <TeamChip team={homeTeam} fallback="Local" />
+            <article className="bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/80 rounded-3xl p-4 sm:p-6 transition-all space-y-4 backdrop-blur-sm shadow-md">
 
-                        <Link
-                            href={match.id ? `/matches/${match.id}` : '#'}
-                            title="Ver partido"
-                            className="bg-slate-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-400 hover:bg-slate-700 transition-colors"
-                        >
-                            {match.homeScore ?? 0} - {match.awayScore ?? 0}
-                        </Link>
-
-                        <TeamChip team={awayTeam} fallback="Visitante" crestAfter />
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
-                        {competition.name && (
-                            <span className="bg-slate-800/90 border border-slate-700/50 px-2.5 py-1 rounded-md font-medium text-slate-300">
-                                {competition.name}
-                            </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                            {formattedDate}
+                {/* Cabecera de Competición y Fecha (Versión limpia) */}
+                <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/60 pb-3">
+                    {competition.name ? (
+                        <span className="bg-slate-800/80 border border-slate-700/50 px-2.5 py-0.5 rounded-lg font-medium text-slate-300 truncate max-w-[180px] sm:max-w-none">
+                            {competition.name}
                         </span>
-                    </div>
+                    ) : <div />}
+
+                    <span className="flex items-center gap-1 font-mono text-[11px] sm:text-xs text-slate-400 shrink-0">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        {formattedDate}
+                    </span>
+                </div>
+
+                {/* Cabecera del Partido: Equipos + Marcador Central Protegido */}
+                <div className="flex items-center justify-between gap-2 sm:gap-4 py-1">
+                    {/* Equipo Local */}
+                    <TeamChip team={homeTeam} fallback="Local" align="right" />
+
+                    {/* Marcador Central Inviolable */}
+                    <Link
+                        href={match.id ? `/matches/${match.id}` : '#'}
+                        title="Ver partido"
+                        className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-black text-emerald-400 text-sm sm:text-base shrink-0 self-center flex items-center justify-center gap-1.5 min-w-[58px] text-center shadow-inner hover:border-emerald-500/40 transition-colors"
+                    >
+                        <span>{match.homeScore ?? 0}</span>
+                        <span className="text-slate-600 text-xs font-sans">-</span>
+                        <span>{match.awayScore ?? 0}</span>
+                    </Link>
+
+                    {/* Equipo Visitante */}
+                    <TeamChip team={awayTeam} fallback="Visitante" align="left" />
                 </div>
 
                 {/* Calificación y Título */}
-                <div className="space-y-1.5">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg text-amber-400 font-bold text-xs sm:text-sm">
-                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl text-amber-400 font-black text-xs sm:text-sm shrink-0">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                             <span>{review.rating ? review.rating.toFixed(1) : '0.0'}</span>
                         </div>
                         {review.title && (
-                            <h2 className="text-base sm:text-lg font-bold text-white">
+                            <h2 className="text-sm sm:text-base font-bold text-white truncate">
                                 {review.title}
                             </h2>
                         )}
@@ -115,7 +125,7 @@ export default function ReviewCardClient({
                 {tags.length > 0 && <ReviewTagList tags={tags} />}
 
                 {/* Contenido de la Reseña */}
-                <div className="text-slate-300 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                <div className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                     {review.hasSpoilers ? (
                         <details className="cursor-pointer group">
                             <summary className="text-amber-400/90 text-xs font-semibold select-none group-open:mb-2">
@@ -128,28 +138,29 @@ export default function ReviewCardClient({
                     )}
                 </div>
 
-                {/* Pie de tarjeta con likes y botón de comentarios */}
-                <div className="flex items-center justify-between pt-2 text-xs text-slate-400 border-t border-slate-800/60">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-slate-400">
-                            <Heart className="w-4 h-4 text-rose-500/80 fill-rose-500/20" />
-                            <span>{likesCount} likes</span>
+                {/* Pie de tarjeta adaptado para móvil */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-xs text-slate-400 border-t border-slate-800/60">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-slate-400 font-medium">
+                            <Heart className="w-3.5 h-3.5 text-rose-500/80 fill-rose-500/20" />
+                            <span>{likesCount}</span>
                         </div>
 
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20"
+                            className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 active:scale-95"
                         >
-                            <MessageSquare className="w-4 h-4" />
+                            <MessageSquare className="w-3.5 h-3.5" />
                             <span>Comentarios ({review.comments?.length || 0})</span>
                         </button>
                     </div>
 
                     <Link
                         href={match.id ? `/matches/${match.id}` : '#'}
-                        className="text-slate-400 hover:text-white font-medium transition-colors"
+                        className="text-slate-400 hover:text-emerald-400 font-medium transition-colors flex items-center gap-1 text-[11px] sm:text-xs ml-auto sm:ml-0"
                     >
-                        Ver partido completo →
+                        <span>Ver partido</span>
+                        <ArrowRight className="w-3 h-3" />
                     </Link>
                 </div>
             </article>
