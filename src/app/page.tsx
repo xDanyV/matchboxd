@@ -165,7 +165,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const currentSeason = season || availableSeasons[0] || '2024-2025';
 
   return (
-    <div className="flex min-h-[100svh] flex-col text-slate-100">
+    <div className="flex min-h-[100svh] flex-col text-slate-100 pb-28">
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-4 py-6 sm:gap-14 sm:px-6 sm:py-10 lg:px-8">
         <section className="grid overflow-hidden rounded-[2rem] bg-slate-900 md:grid-cols-[1.1fr_0.9fr]">
           <div className="flex min-h-[300px] flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">

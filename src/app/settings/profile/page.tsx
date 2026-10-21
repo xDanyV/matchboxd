@@ -29,7 +29,7 @@ export default async function ProfileSettingsPage() {
     if (!user || !username) redirect('/');
 
     return (
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6 pb-28">
             <Link
                 href={`/u/${username}`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-sm font-medium transition-all"

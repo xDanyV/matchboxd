@@ -73,7 +73,7 @@ function Pagination({
         'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-600 text-xs font-bold cursor-not-allowed opacity-50';
 
     return (
-        <div className="flex items-center justify-between border-t border-slate-800/80 pt-6 px-2">
+        <div className="flex items-center justify-between border-t border-slate-800/80 pt-6 px-2 pb-28">
             <p className="text-xs sm:text-sm text-slate-400 font-medium">
                 Página <span className="text-white font-bold">{page}</span> de{' '}
                 <span className="text-white font-bold">{totalPages}</span>
