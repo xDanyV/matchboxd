@@ -87,7 +87,7 @@ export default function ReviewSection({ initialReviews, currentUserId }: ReviewS
 
                                 <ReviewTagList tags={review.tags} />
 
-                                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                                <p className={`text-slate-300 text-xs sm:text-sm leading-relaxed inline-block cursor-default ${review.hasSpoilers ? 'blur-sm hover:blur-none transition-all duration-300' : ''}`}>
                                     {review.content}
                                 </p>
 
