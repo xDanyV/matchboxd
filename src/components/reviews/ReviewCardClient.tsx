@@ -124,15 +124,20 @@ export default function ReviewCardClient({
                 {/* Etiquetas de la reseña */}
                 {tags.length > 0 && <ReviewTagList tags={tags} />}
 
-                {/* Contenido de la Reseña */}
+                {/* Contenido de la Reseña con Efecto Spoiler por Hover */}
                 <div className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                     {review.hasSpoilers ? (
-                        <details className="cursor-pointer group">
-                            <summary className="text-amber-400/90 text-xs font-semibold select-none group-open:mb-2">
-                                Esta reseña contiene spoilers (haz clic para leer)
-                            </summary>
-                            <p className="text-slate-300 pt-1">{review.content}</p>
-                        </details>
+                        <div className="group/spoiler relative">
+                            {/* Aviso visual superior */}
+                            <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold mb-1.5 select-none">
+                                <span>Contiene spoilers — Pasa el cursor para revelar</span>
+                            </div>
+
+                            {/* Texto difuminado que se limpia al hacer hover */}
+                            <p className="filter blur-sm group-hover/spoiler:blur-none transition-all duration-300 select-none group-hover/spoiler:select-auto cursor-default">
+                                {review.content}
+                            </p>
+                        </div>
                     ) : (
                         <p>{review.content}</p>
                     )}
