@@ -33,9 +33,11 @@ export default function WatchlistButton({ matchId, initialIsSaved }: WatchlistBu
             disabled={isPending}
             aria-label={isSaved ? 'Quitar de Por Ver' : 'Guardar en Por Ver'}
             title={isSaved ? 'Quitar de Por Ver' : 'Guardar en Por Ver'}
-            className={`p-2 rounded-full border transition-all active:scale-95 ${isSaved
-                ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-slate-700'
+            className={`p-2 rounded-full border transition-all active:scale-95 
+                hover:shadow-lg shadow-emerald-400/20
+                ${isSaved
+                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-slate-700'
                 }`}
         >
             <Bookmark

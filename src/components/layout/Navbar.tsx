@@ -173,7 +173,7 @@ export default async function Navbar() {
                                         className="rounded-full border border-emerald-500/60"
                                     />
                                 ) : (
-                                    <div className="w-[22px] h-[22px] rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center font-bold text-[10px] text-emerald-400">
+                                    <div className="w-5.5 h-5.5 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center font-bold text-[10px] text-emerald-400">
                                         {session.user.name?.charAt(0) || 'U'}
                                     </div>
                                 )}

@@ -75,7 +75,7 @@ export default function ReviewCardClient({
                 {/* Cabecera de Competición y Fecha (Versión limpia) */}
                 <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/60 pb-3">
                     {competition.name ? (
-                        <span className="bg-slate-800/80 border border-slate-700/50 px-2.5 py-0.5 rounded-lg font-medium text-slate-300 truncate max-w-[180px] sm:max-w-none">
+                        <span className="bg-slate-800/80 border border-slate-700/50 px-2.5 py-0.5 rounded-lg font-medium text-slate-300 truncate max-w-45 sm:max-w-none">
                             {competition.name}
                         </span>
                     ) : <div />}
@@ -95,7 +95,7 @@ export default function ReviewCardClient({
                     <Link
                         href={match.id ? `/matches/${match.id}` : '#'}
                         title="Ver partido"
-                        className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-black text-emerald-400 text-sm sm:text-base shrink-0 self-center flex items-center justify-center gap-1.5 min-w-[58px] text-center shadow-inner hover:border-emerald-500/40 transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-black text-emerald-400 text-sm sm:text-base shrink-0 self-center flex items-center justify-center gap-1.5 min-w-14.5 text-center shadow-inner hover:border-emerald-500/40 transition-colors"
                     >
                         <span>{match.homeScore ?? 0}</span>
                         <span className="text-slate-600 text-xs font-sans">-</span>
@@ -129,12 +129,12 @@ export default function ReviewCardClient({
                     {review.hasSpoilers ? (
                         <div className="group/spoiler relative">
                             {/* Aviso visual superior */}
-                            <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold mb-1.5 select-none">
-                                <span>Contiene spoilers — Pasa el cursor para revelar</span>
+                            <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold mb-1.5 select-none">
+                                <span>Spoiler</span>
                             </div>
 
                             {/* Texto difuminado que se limpia al hacer hover */}
-                            <p className="filter blur-sm group-hover/spoiler:blur-none transition-all duration-300 select-none group-hover/spoiler:select-auto cursor-default">
+                            <p className="blur-sm hover:blur-none transition-all duration-300 text-slate-300 text-xs sm:text-sm leading-relaxed inline-block cursor-default">
                                 {review.content}
                             </p>
                         </div>
