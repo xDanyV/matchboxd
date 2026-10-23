@@ -10,7 +10,7 @@ export default function Footer() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-slate-950 border-t border-slate-950 text-slate-400 py-8 px-4 sm:px-6 lg:px-8 pb-28 sm:pb-10 mt-auto"
+            className="bg-slate-950 border-t border-slate-800/60 text-slate-400 py-8 px-4 sm:px-6 lg:px-8 pb-28 sm:pb-10 mt-auto"
         >
             <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
 
@@ -23,8 +23,8 @@ export default function Footer() {
                 </Link>
 
                 {/* Mensaje con corazón */}
-                <p className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
-                    Hecho con <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 shrink-0" /> para los fans del fútbol.
+                <p className="text-xs text-slate-500 flex items-center gap-1.5 font-medium cursor-default select-none">
+                    Hecho con <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 shrink-0 active:scale-125 cursor-pointer" /> para los fans del fútbol.
                 </p>
 
                 {/* Redes Sociales */}

@@ -3,13 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import ReviewSection from '@/components/matches/ReviewSection';
 import WatchlistButton from '@/components/matches/WatchlistButton';
+import ShareButton from '@/components/matches/ShareButton';
 import MatchTimeline from '@/components/matches/MatchTimeline';
 import FloatingScoreHeader from '@/components/matches/FloatingScoreHeader';
 import MatchHeaderSection from '@/components/matches/MatchHeaderSection';
 import MatchRatingMvpSection from '@/components/matches/MatchRatingMvpSection';
 import { summarizeReviewTags } from '@/lib/review-tags';
 import type { TimelineEvent } from '@/lib/match-events';
-import { Share2 } from 'lucide-react';
 
 interface MatchPageProps {
     params: Promise<{ id: string }>;
@@ -102,12 +102,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     </div>
                     <div className="flex items-center gap-2">
                         <WatchlistButton matchId={match.id} initialIsSaved={isWatchlisted} />
-                        <button
-                            aria-label="Compartir partido"
-                            className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all active:scale-95 shadow-sm"
-                        >
-                            <Share2 className="w-4 h-4" />
-                        </button>
+                        <ShareButton match={match} />
                     </div>
                 </div>
 
