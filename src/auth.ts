@@ -23,12 +23,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
     },
     callbacks: {
+        // Con sesiones en base de datos, `session` trae la fila completa (sessionToken, userId)
+        // y `user` todas las columnas del usuario. Se devuelve solo lo que usa la app,
+        // porque este objeto también se expone en /api/auth/session.
         session({ session, user }) {
-            if (session.user && user) {
-                session.user.id = user.id;
-                session.user.username = user.username ?? null;
-            }
-            return session;
+            return {
+                expires: session.expires,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    image: user.image,
+                    username: user.username ?? null,
+                },
+            };
         },
     },
 });

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { Star, Sparkles, User } from 'lucide-react';
 import RateButton from '@/components/matches/RateButton';
 import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
+import type { ExistingReview } from '@/components/matches/ReviewModal';
 
 interface MatchRatingMvpProps {
     match: any;
@@ -10,6 +11,9 @@ interface MatchRatingMvpProps {
     mvpList: any[];
     totalMvpVotes: number;
     isAuthenticated: boolean;
+    existingReview: ExistingReview | null;
+    existingMvpPlayerId: string | null;
+    timesWatched: number;
 }
 
 export default function MatchRatingMvpSection({
@@ -19,6 +23,9 @@ export default function MatchRatingMvpSection({
     mvpList,
     totalMvpVotes,
     isAuthenticated,
+    existingReview,
+    existingMvpPlayerId,
+    timesWatched,
 }: MatchRatingMvpProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -35,7 +42,7 @@ export default function MatchRatingMvpSection({
                         <span className="text-sm text-slate-500 font-semibold">/ 10</span>
                     </div>
                     <p className="text-xs text-slate-400 mt-2">
-                        Basado en {match.reviews.length} {match.reviews.length === 1 ? 'reseña' : 'reseñas'}
+                        Basado en {match.reviews.length} {match.reviews.length === 1 ? 'calificación' : 'calificaciones'}
                     </p>
 
                     {tagSummary.counts.length > 0 && (
@@ -55,9 +62,13 @@ export default function MatchRatingMvpSection({
                 <RateButton
                     matchId={match.id}
                     matchTitle={`${match.homeTeam.name} vs ${match.awayTeam.name}`}
+                    matchDate={new Date(match.date).toISOString()}
                     homeTeam={match.homeTeam}
                     awayTeam={match.awayTeam}
                     isAuthenticated={isAuthenticated}
+                    existingReview={existingReview}
+                    existingMvpPlayerId={existingMvpPlayerId}
+                    timesWatched={timesWatched}
                 />
             </div>
 

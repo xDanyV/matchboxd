@@ -24,7 +24,7 @@ interface ReviewCommentsModalProps {
     review: {
         id: string;
         title: string | null;
-        content: string;
+        content: string | null;
         rating: number;
         match?: {
             homeTeam: { name: string };
@@ -151,7 +151,11 @@ export default function ReviewCommentsModal({
                                 ⭐ {review.rating?.toFixed(1) || '0.0'} / 10
                             </span>
                         </div>
-                        <p className="text-slate-300 text-sm leading-relaxed">{review.content}</p>
+                        {review.content ? (
+                            <p className="text-slate-300 text-sm leading-relaxed">{review.content}</p>
+                        ) : (
+                            <p className="text-slate-500 text-sm italic">Calificación sin reseña escrita.</p>
+                        )}
 
                         {/* Botones de Reacción (Likes / Dislikes) */}
                         <div className="flex items-center gap-4 pt-2 border-t border-slate-800/60">

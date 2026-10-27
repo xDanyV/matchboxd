@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Base para las URLs absolutas de las imágenes Open Graph
+  metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
   title: "Matchbox",
   description: "Reseñas y seguimiento de partidos de fútbol",
 };

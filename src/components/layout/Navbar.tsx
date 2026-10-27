@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut, User, Home } from 'lucide-react';
-import { auth, signIn, signOut } from '@/auth';
+import { signIn, signOut } from '@/auth';
+import { getSession } from '@/lib/session';
 import GlobalSearch from '@/components/search/GlobalSearch';
 
 export default async function Navbar() {
-    const session = await auth();
+    const session = await getSession();
 
     return (
         <>

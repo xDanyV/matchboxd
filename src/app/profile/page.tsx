@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
+import { getSession } from '@/lib/session';
 import { ensureUsername } from '@/lib/username';
 
 export default async function ProfileRedirectPage() {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session?.user?.id) {
         redirect('/api/auth/signin?callbackUrl=/profile');

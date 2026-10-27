@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { auth } from '@/auth';
+import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { ensureUsername } from '@/lib/username';
 import ProfileForm from '@/components/profile/ProfileForm';
 
 export default async function ProfileSettingsPage() {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session?.user?.id) {
         redirect('/api/auth/signin?callbackUrl=/settings/profile');
