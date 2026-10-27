@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -7,7 +7,7 @@ import TeamLink from '@/components/teams/TeamLink';
 import { Bookmark, Calendar, Trophy, ArrowRight } from 'lucide-react';
 
 export default async function WatchlistPage() {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session?.user) {
         redirect('/api/auth/signin');
@@ -48,7 +48,7 @@ export default async function WatchlistPage() {
                                 Partidos Por Ver
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                                Tu lista personal de encuentros pendientes por calificar o revivir.
+                                Partidos pendientes por ver. Al registrarlos en tu diario salen de esta lista.
                             </p>
                         </div>
                     </div>
@@ -119,9 +119,9 @@ export default async function WatchlistPage() {
                                         <TeamLink
                                             slug={match.homeTeam.slug}
                                             name={match.homeTeam.name}
-                                            className="group/team flex-1 flex items-center justify-end gap-3 min-w-0"
+                                            className="group/team flex-1 flex flex-col-reverse sm:flex-row items-center sm:justify-end gap-2 sm:gap-3 min-w-0"
                                         >
-                                            <span className="font-bold text-sm sm:text-base text-slate-100 group-hover/team:text-emerald-400 transition-colors truncate text-right">
+                                            <span className="font-bold text-sm sm:text-base text-slate-100 group-hover/team:text-emerald-400 transition-colors line-clamp-2 sm:truncate text-center sm:text-right">
                                                 {match.homeTeam.shortName || match.homeTeam.name}
                                             </span>
                                             <TeamCrest name={match.homeTeam.name} crestUrl={match.homeTeam.crestUrl} size={32} />
@@ -136,10 +136,10 @@ export default async function WatchlistPage() {
                                         <TeamLink
                                             slug={match.awayTeam.slug}
                                             name={match.awayTeam.name}
-                                            className="group/team flex-1 flex items-center justify-start gap-3 min-w-0"
+                                            className="group/team flex-1 flex flex-col sm:flex-row items-center sm:justify-start gap-2 sm:gap-3 min-w-0"
                                         >
                                             <TeamCrest name={match.awayTeam.name} crestUrl={match.awayTeam.crestUrl} size={32} />
-                                            <span className="font-bold text-sm sm:text-base text-slate-100 group-hover/team:text-emerald-400 transition-colors truncate text-left">
+                                            <span className="font-bold text-sm sm:text-base text-slate-100 group-hover/team:text-emerald-400 transition-colors line-clamp-2 sm:truncate text-center sm:text-left">
                                                 {match.awayTeam.shortName || match.awayTeam.name}
                                             </span>
                                         </TeamLink>

@@ -3,11 +3,16 @@ import Image from 'next/image';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Calendar, MessageSquare, Settings } from 'lucide-react';
-import { auth } from '@/auth';
+import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import ReviewCardClient from '@/components/reviews/ReviewCardClient';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
+import ProfileStats from '@/components/profile/ProfileStats';
+import DiaryList, { type DiaryEntry } from '@/components/profile/DiaryList';
+import { getUserStats } from '@/lib/user-stats';
+
+const DIARY_LIMIT = 10;
 
 interface UserProfilePageProps {
     params: Promise<{ username: string }>;
@@ -30,13 +35,15 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
     const { username } = await params;
 
     const [session, user] = await Promise.all([
-        auth(),
+        getSession(),
         prisma.user.findUnique({
             where: { username: username.toLowerCase() },
             include: {
                 favoriteTeam: true,
-                _count: { select: { reviews: true } },
+                // Solo reseñas con texto: las calificaciones sueltas viven en el diario y las estadísticas
+                _count: { select: { reviews: { where: { content: { not: null } } } } },
                 reviews: {
+                    where: { content: { not: null } },
                     include: {
                         match: {
                             include: {
@@ -61,6 +68,37 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
     ]);
 
     if (!user) notFound();
+
+    const [stats, logs, ratings] = await Promise.all([
+        getUserStats(user.id),
+        prisma.matchLog.findMany({
+            where: { userId: user.id },
+            include: {
+                match: {
+                    select: {
+                        id: true,
+                        season: true,
+                        stage: true,
+                        homeTeam: { select: { name: true, shortName: true, crestUrl: true } },
+                        awayTeam: { select: { name: true, shortName: true, crestUrl: true } },
+                    },
+                },
+            },
+            orderBy: [{ watchedOn: 'desc' }, { createdAt: 'desc' }],
+            take: DIARY_LIMIT,
+        }),
+        prisma.review.findMany({ where: { userId: user.id }, select: { matchId: true, rating: true } }),
+    ]);
+
+    const ratingByMatch = new Map(ratings.map((review) => [review.matchId, review.rating]));
+    const diaryEntries: DiaryEntry[] = logs.map((log) => ({
+        id: log.id,
+        watchedOn: log.watchedOn,
+        method: log.method,
+        isRewatch: log.isRewatch,
+        match: log.match,
+        rating: ratingByMatch.get(log.matchId) ?? null,
+    }));
 
     const viewerId = session?.user?.id ?? '';
     const isOwner = viewerId !== '' && viewerId === user.id;
@@ -139,6 +177,10 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                     )}
                 </div>
             </section>
+
+            <ProfileStats stats={stats} />
+
+            <DiaryList entries={diaryEntries} totalLogs={stats.totalLogs} isOwner={isOwner} />
 
             {/* Reseñas recientes */}
             <section className="space-y-6">

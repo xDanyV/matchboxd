@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
+import { getSession } from '@/lib/session';
 import ReviewSection from '@/components/matches/ReviewSection';
 import WatchlistButton from '@/components/matches/WatchlistButton';
 import ShareButton from '@/components/matches/ShareButton';
@@ -8,8 +8,10 @@ import MatchTimeline from '@/components/matches/MatchTimeline';
 import FloatingScoreHeader from '@/components/matches/FloatingScoreHeader';
 import MatchHeaderSection from '@/components/matches/MatchHeaderSection';
 import MatchRatingMvpSection from '@/components/matches/MatchRatingMvpSection';
+import SeenButton from '@/components/matches/SeenButton';
 import { summarizeReviewTags } from '@/lib/review-tags';
 import type { TimelineEvent } from '@/lib/match-events';
+import type { Metadata } from 'next';
 
 interface MatchPageProps {
     params: Promise<{ id: string }>;
@@ -17,9 +19,36 @@ interface MatchPageProps {
 
 export const revalidate = 0;
 
+// Sin marcador: los enlaces compartidos no deben destripar el resultado
+export async function generateMetadata({ params }: MatchPageProps): Promise<Metadata> {
+    const { id } = await params;
+    const match = await prisma.match.findUnique({
+        where: { id },
+        select: {
+            season: true,
+            stage: true,
+            homeTeam: { select: { name: true } },
+            awayTeam: { select: { name: true } },
+            competition: { select: { name: true } },
+        },
+    });
+
+    if (!match) return { title: 'Partido no encontrado | Matchbox' };
+
+    const title = `${match.homeTeam.name} vs ${match.awayTeam.name}`;
+    const description = `${match.competition.name}${match.stage ? ` · ${match.stage}` : ''} (${match.season}). Califica el partido, vota al MVP y lee las reseñas de la comunidad en Matchbox.`;
+
+    return {
+        title: `${title} | Matchbox`,
+        description,
+        openGraph: { title, description, type: 'article' },
+        twitter: { card: 'summary_large_image', title, description },
+    };
+}
+
 export default async function MatchDetailPage({ params }: MatchPageProps) {
     const { id } = await params;
-    const session = await auth();
+    const session = await getSession();
 
     const match = await prisma.match.findUnique({
         where: { id },
@@ -47,11 +76,31 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
     if (!match) notFound();
 
-    const isWatchlisted = session?.user?.id
-        ? !!(await prisma.watchlist.findUnique({
-            where: { userId_matchId: { userId: session.user.id, matchId: id } },
-        }))
-        : false;
+    const userId = session?.user?.id;
+    const [watchlistEntry, timesWatched] = await Promise.all([
+        userId
+            ? prisma.watchlist.findUnique({ where: { userId_matchId: { userId, matchId: id } } })
+            : null,
+        userId ? prisma.matchLog.count({ where: { userId, matchId: id } }) : 0,
+    ]);
+    const isWatchlisted = !!watchlistEntry;
+
+    const ownReview = userId ? match.reviews.find((review) => review.userId === userId) : undefined;
+    const existingReview = ownReview
+        ? {
+            rating: ownReview.rating,
+            title: ownReview.title,
+            content: ownReview.content,
+            hasSpoilers: ownReview.hasSpoilers,
+            tags: ownReview.tags,
+        }
+        : null;
+    const existingMvpPlayerId = userId
+        ? match.mvpVotes.find((vote) => vote.userId === userId)?.playerId ?? null
+        : null;
+
+    // El muro solo muestra reseñas con texto; las calificaciones sueltas cuentan para la media
+    const writtenReviews = match.reviews.filter((review) => review.content);
 
     const totalRating = match.reviews.reduce((acc, r) => acc + r.rating, 0);
     const avgRating = match.reviews.length > 0 ? (totalRating / match.reviews.length).toFixed(1) : null;
@@ -101,7 +150,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <WatchlistButton matchId={match.id} initialIsSaved={isWatchlisted} />
+                        <SeenButton matchId={match.id} timesWatched={timesWatched} isAuthenticated={!!userId} />
+                        {/* key: al registrar el partido sale de Por Ver y el botón debe reiniciar su estado */}
+                        <WatchlistButton key={String(isWatchlisted)} matchId={match.id} initialIsSaved={isWatchlisted} />
                         <ShareButton match={match} />
                     </div>
                 </div>
@@ -125,6 +176,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     mvpList={mvpList}
                     totalMvpVotes={totalMvpVotes}
                     isAuthenticated={!!session?.user}
+                    existingReview={existingReview}
+                    existingMvpPlayerId={existingMvpPlayerId}
+                    timesWatched={timesWatched}
                 />
 
                 {/* Línea de tiempo optimizada para eliminar espacios vacíos */}
@@ -141,7 +195,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                 )}
 
                 {/* Reseñas */}
-                <ReviewSection initialReviews={match.reviews} currentUserId={session?.user?.id || ''} />
+                <ReviewSection initialReviews={writtenReviews} currentUserId={session?.user?.id || ''} />
             </main>
         </div>
     );

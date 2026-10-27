@@ -16,11 +16,12 @@ For now it focuses on the **UEFA Champions League**, with match data coming from
 - **Browse matches** by season, with pagination.
 - **Top matches** ranking based on community ratings.
 - **Match page** with score, venue, community rating, MVP voting, a match **timeline** (goals, cards, substitutions and VAR checks) and the reviews wall.
-- **Reviews** with a 1-10 rating, title, spoiler flag, likes/dislikes and comments.
-- **Review tags** (up to 3 per review, such as epic, comeback, dramatic, controversial, goal fest, tactical or boring). The most voted tags of a match are highlighted on its card and page.
-- **Watchlist** ("Por Ver") to save matches for later.
+- **Reviews** with a 1-10 rating, title, spoiler flag, likes/dislikes and comments. The text is optional: a review without text is just a rating.
+- **Diary**: log every time you watch a match (date, how you watched it — stadium, TV, streaming, replay or highlights — and whether it was a rewatch), from the rating dialog or with one click on "Marcar como visto".- **Review tags** (up to 3 per review, such as epic, comeback, dramatic, controversial, goal fest, tactical or boring). The most voted tags of a match are highlighted on its card and page.
+- **Watchlist** ("Por Ver") to save matches for later. Logging a match in the diary removes it from the list.
 - **Google sign-in** with Auth.js.
-- **User profiles** (`/u/[username]`) with editable username, bio and favorite team, plus recent reviews.
+- **User profiles** (`/u/[username]`) with editable username, bio and favorite team, personal stats (matches watched, stadium visits, rewatches, average rating, rating distribution, most watched team, favorite tag), the diary and recent reviews.
+- **Share cards**: dynamic Open Graph images for matches (no score, so links never spoil the result) and profiles.
 - **Team pages** (`/teams/[slug]`) with crest, country, founding year, venue, current squad, best rated matches and match history. Team crests link to them across the whole app.
 - **Global search**: press `/` or `Ctrl+K` for quick suggestions, or use `/search` to filter by season, stage and rating range.
 
@@ -61,6 +62,7 @@ AUTH_SECRET="generate-one-with-npx-auth-secret"
 AUTH_GOOGLE_ID="your-google-client-id"
 AUTH_GOOGLE_SECRET="your-google-client-secret"
 FOOTBALL_API_KEY="your-api-football-key"
+SITE_URL="http://localhost:3000"
 ```
 
 | Variable | Description |
@@ -69,6 +71,8 @@ FOOTBALL_API_KEY="your-api-football-key"
 | `AUTH_SECRET` | Secret used by Auth.js. Generate one with `npx auth secret`. |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Google OAuth credentials. |
 | `FOOTBALL_API_KEY` | API-Football key, only needed by the data scripts. |
+| `SITE_URL` | Public URL of the app, used to build absolute links to the Open Graph images. Defaults to `http://localhost:3000`. |
+| `AUTH_TRUST_HOST` | Set it to `true` when running `npm start` outside Vercel (another host, Docker or locally). Without it Auth.js rejects every session with `UntrustedHost`. Vercel sets it automatically. |
 
 Never commit your `.env` file. Make sure it is listed in `.gitignore`.
 
@@ -114,6 +118,7 @@ When you deploy, add the production callback URL (`https://your-domain/api/auth/
 | `npm run seed -- --squads` | Same, and also refreshes the squads of every team. |
 | `npm run enrich:teams` | Updates team details (country, founding year, venue) for existing teams. Add `-- --squads` to refresh squads too. |
 | `npm run sync:events` | Imports match events into the timeline. Flags: `--force` (redo every match), `--match=<id>` (one match), `--probe=<apiFixtureId>` (inspect the API response without writing to the database). |
+| `npm run backfill:logs` | Creates a diary entry for every review that has none (reviews written before the diary existed) and removes those matches from the watchlist. Run it once after updating the schema. |
 
 All data scripts are idempotent: running them again only fills gaps or updates data.
 

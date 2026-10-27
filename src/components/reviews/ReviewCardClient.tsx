@@ -126,7 +126,9 @@ export default function ReviewCardClient({
 
                 {/* Contenido de la Reseña con Efecto Spoiler por Hover */}
                 <div className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
-                    {review.hasSpoilers ? (
+                    {!review.content ? (
+                        <p className="text-slate-500 italic">Calificación sin reseña escrita.</p>
+                    ) : review.hasSpoilers ? (
                         <div className="group/spoiler relative">
                             {/* Aviso visual superior */}
                             <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-semibold mb-1.5 select-none">

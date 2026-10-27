@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
+import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { MessageSquare, Sparkles } from 'lucide-react';
 import UserReviewsList from '@/components/reviews/UserReviewsList';
 
 export default async function ReviewsPage() {
-    const session = await auth();
+    const session = await getSession();
 
     // Si no hay usuario autenticado
     if (!session?.user?.id && !session?.user?.email) {
@@ -91,7 +91,7 @@ export default async function ReviewsPage() {
                 <div className="relative z-10 self-start sm:self-center">
                     <span className="inline-flex items-center gap-1.5 bg-slate-800/80 border border-slate-700/60 text-emerald-400 text-xs sm:text-sm px-4 py-2 rounded-2xl font-bold shadow-sm">
                         <Sparkles className="w-3.5 h-3.5 fill-emerald-400" />
-                        {reviews.length} {reviews.length === 1 ? 'reseña escrita' : 'reseñas escritas'}
+                        {reviews.length} {reviews.length === 1 ? 'partido calificado' : 'partidos calificados'}
                     </span>
                 </div>
             </div>

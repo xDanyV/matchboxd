@@ -4,15 +4,19 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sanitizeReviewTags } from '@/lib/review-tags';
+import { parseMatchLogInput, type MatchLogInput } from '@/lib/diary';
 
 interface SubmitReviewInput {
     matchId: string;
     rating: number;
     title?: string;
-    content: string;
+    // Opcional: sin texto, la reseña es solo una calificación
+    content?: string;
     hasSpoilers?: boolean;
     mvpPlayerId?: string;
     tags?: string[];
+    // Si viene, además se añade una entrada al diario
+    log?: MatchLogInput;
 }
 
 export async function submitReview(data: SubmitReviewInput) {
@@ -28,42 +32,22 @@ export async function submitReview(data: SubmitReviewInput) {
         throw new Error('La calificacion debe estar entre 1 y 10.');
     }
 
-    if (!data.content.trim()) {
-        throw new Error('El contenido de la reseña no puede estar vacio.');
-    }
+    const content = data.content?.trim() || null;
+    // Un título sin texto no tiene sentido: se descarta
+    const title = content ? data.title?.trim() || null : null;
+    const hasSpoilers = content ? data.hasSpoilers || false : false;
 
     // Etiquetas: se validan en el servidor (catálogo, máximo y opuestas)
     const tags = data.tags === undefined ? undefined : sanitizeReviewTags(data.tags);
 
-    // 1. Guardar o actualizar la reseña
-    const review = await prisma.review.upsert({
-        where: {
-            userId_matchId: {
-                userId,
-                matchId: data.matchId,
-            },
-        },
-        update: {
-            rating: data.rating,
-            title: data.title?.trim() || null,
-            content: data.content.trim(),
-            hasSpoilers: data.hasSpoilers || false,
-            ...(tags !== undefined ? { tags } : {}),
-        },
-        create: {
-            userId,
-            matchId: data.matchId,
-            rating: data.rating,
-            title: data.title?.trim() || null,
-            content: data.content.trim(),
-            hasSpoilers: data.hasSpoilers || false,
-            tags: tags ?? [],
-        },
-    });
+    const match = await prisma.match.findUnique({ where: { id: data.matchId }, select: { date: true } });
+    if (!match) throw new Error('El partido no existe.');
 
-    // 2. Guardar o actualizar voto MVP si se selecciono jugador
-    if (data.mvpPlayerId) {
-        await prisma.mvpVote.upsert({
+    const log = data.log ? parseMatchLogInput(data.log, match.date) : null;
+
+    const review = await prisma.$transaction(async (tx) => {
+        // 1. Guardar o actualizar la reseña
+        const saved = await tx.review.upsert({
             where: {
                 userId_matchId: {
                     userId,
@@ -71,19 +55,56 @@ export async function submitReview(data: SubmitReviewInput) {
                 },
             },
             update: {
-                playerId: data.mvpPlayerId,
+                rating: data.rating,
+                title,
+                content,
+                hasSpoilers,
+                ...(tags !== undefined ? { tags } : {}),
             },
             create: {
                 userId,
                 matchId: data.matchId,
-                playerId: data.mvpPlayerId,
+                rating: data.rating,
+                title,
+                content,
+                hasSpoilers,
+                tags: tags ?? [],
             },
         });
-    }
 
-    // 3. Revalidar cache de rutas afectadas
+        // 2. Guardar o actualizar voto MVP si se selecciono jugador
+        if (data.mvpPlayerId) {
+            await tx.mvpVote.upsert({
+                where: {
+                    userId_matchId: {
+                        userId,
+                        matchId: data.matchId,
+                    },
+                },
+                update: {
+                    playerId: data.mvpPlayerId,
+                },
+                create: {
+                    userId,
+                    matchId: data.matchId,
+                    playerId: data.mvpPlayerId,
+                },
+            });
+        }
+
+        // 3. Entrada de diario: al verlo, el partido deja de estar pendiente
+        if (log) {
+            await tx.matchLog.create({ data: { ...log, userId, matchId: data.matchId } });
+            await tx.watchlist.deleteMany({ where: { userId, matchId: data.matchId } });
+        }
+
+        return saved;
+    });
+
+    // 4. Revalidar cache de rutas afectadas
     revalidatePath(`/matches/${data.matchId}`);
     revalidatePath('/');
+    if (log) revalidatePath('/watchlist');
 
     return { success: true, reviewId: review.id };
 }
