@@ -98,7 +98,7 @@ export default function ReviewModal({
 
         startTransition(async () => {
             try {
-                await submitReview({
+                const result = await submitReview({
                     matchId,
                     rating,
                     title,
@@ -108,6 +108,10 @@ export default function ReviewModal({
                     mvpPlayerId: mvpPlayerId || undefined,
                     log: addToDiary ? { watchedOn, method, isRewatch } : undefined,
                 });
+                if (!result.success) {
+                    setError(result.error);
+                    return;
+                }
                 onClose();
             } catch (err: unknown) {
                 if (err instanceof Error) {

@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { MessageSquare, Star, Heart } from 'lucide-react';
 import ReviewCommentsModal from '@/components/reviews/ReviewCommentsModal';
 import { ReviewTagList } from '@/components/reviews/ReviewTagChip';
+import ContentActions from '@/components/moderation/ContentActions';
 
 interface ReviewSectionProps {
     initialReviews: any[];
     currentUserId: string;
+    isAdmin?: boolean;
 }
 
-export default function ReviewSection({ initialReviews, currentUserId }: ReviewSectionProps) {
+export default function ReviewSection({ initialReviews, currentUserId, isAdmin = false }: ReviewSectionProps) {
     const [selectedReview, setSelectedReview] = useState<any | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -105,6 +107,16 @@ export default function ReviewSection({ initialReviews, currentUserId }: ReviewS
                                         <MessageSquare className="w-3.5 h-3.5" />
                                         <span>Comentar ({commentsCount})</span>
                                     </button>
+
+                                    <div className="ml-auto">
+                                        <ContentActions
+                                            kind="review"
+                                            id={review.id}
+                                            authorId={review.userId}
+                                            currentUserId={currentUserId}
+                                            isAdmin={isAdmin}
+                                        />
+                                    </div>
                                 </div>
                             </article>
                         );
@@ -117,6 +129,7 @@ export default function ReviewSection({ initialReviews, currentUserId }: ReviewS
                 <ReviewCommentsModal
                     review={selectedReview}
                     currentUserId={currentUserId}
+                    isAdmin={isAdmin}
                     isOpen={!!selectedReview}
                     onClose={() => setSelectedReview(null)}
                 />

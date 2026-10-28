@@ -21,7 +21,9 @@ For now it focuses on the **UEFA Champions League**, with match data coming from
 - **Watchlist** ("Por Ver") to save matches for later. Logging a match in the diary removes it from the list.
 - **Google sign-in** with Auth.js.
 - **User profiles** (`/u/[username]`) with editable username, bio and favorite team, personal stats (matches watched, stadium visits, rewatches, average rating, rating distribution, most watched team, favorite tag), the diary and recent reviews.
-- **Share cards**: dynamic Open Graph images for matches (no score, so links never spoil the result) and profiles.
+- **Share cards**: dynamic Open Graph images for matches (no score, so links never spoil the result) and profiles. The share button uses the native share menu and falls back to copying the link.
+- **Moderation**: users can delete their own reviews and comments (and comments on their reviews), and report other people's content (spam, offensive, unmarked spoiler, other). Admins review reports grouped by content at `/admin/reports` and can dismiss them or delete the content.
+- **Automatic moderation**: a language filter (`src/lib/content-filter.ts`) checks reviews, comments, usernames and bios. Slurs and threats are blocked; common swear words are published but sent to the moderation queue as automatic reports. It normalizes accents, case, leetspeak (`p3nd3j0`), repeated letters and separators (`p.u.t.a`), and matches whole words only. Users are also rate-limited (5 comments per minute, 10 ratings per minute, 10 reports per 10 minutes).
 - **Team pages** (`/teams/[slug]`) with crest, country, founding year, venue, current squad, best rated matches and match history. Team crests link to them across the whole app.
 - **Global search**: press `/` or `Ctrl+K` for quick suggestions, or use `/search` to filter by season, stage and rating range.
 
@@ -119,6 +121,7 @@ When you deploy, add the production callback URL (`https://your-domain/api/auth/
 | `npm run enrich:teams` | Updates team details (country, founding year, venue) for existing teams. Add `-- --squads` to refresh squads too. |
 | `npm run sync:events` | Imports match events into the timeline. Flags: `--force` (redo every match), `--match=<id>` (one match), `--probe=<apiFixtureId>` (inspect the API response without writing to the database). |
 | `npm run backfill:logs` | Creates a diary entry for every review that has none (reviews written before the diary existed) and removes those matches from the watchlist. Run it once after updating the schema. |
+| `npm run set-role -- <username> <admin\|user>` | Promotes a user to admin (or back to user). There is no UI for this on purpose. The change applies on the user's next request. |
 
 All data scripts are idempotent: running them again only fills gaps or updates data.
 

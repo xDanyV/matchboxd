@@ -195,7 +195,11 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                 )}
 
                 {/* Reseñas */}
-                <ReviewSection initialReviews={writtenReviews} currentUserId={session?.user?.id || ''} />
+                <ReviewSection
+                    initialReviews={writtenReviews}
+                    currentUserId={session?.user?.id || ''}
+                    isAdmin={session?.user?.role === 'ADMIN'}
+                />
             </main>
         </div>
     );

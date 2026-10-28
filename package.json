@@ -10,7 +10,8 @@
     "enrich:teams": "tsx --env-file=.env prisma/enrich-teams.ts",
     "sync:events": "tsx --env-file=.env prisma/sync-events.ts",
     "seed": "tsx --env-file=.env prisma/seed.ts",
-    "backfill:logs": "tsx --env-file=.env prisma/backfill-logs.ts"
+    "backfill:logs": "tsx --env-file=.env prisma/backfill-logs.ts",
+    "set-role": "tsx --env-file=.env prisma/set-role.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
