@@ -1,10 +1,25 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 
+const COMMENT_MAX_LENGTH = 1000;
+
+type InteractionResult = { success: true } | { success: false; error: string };
+
+// El usuario sale siempre de la sesión del servidor: una server action es un endpoint
+// público y cualquier id que llegue del cliente puede estar manipulado.
+async function getUserId() {
+    const session = await auth();
+    return session?.user?.id ?? null;
+}
+
 // Alternar Like / Dislike
-export async function toggleReviewReaction(reviewId: string, userId: string, isLike: boolean) {
+export async function toggleReviewReaction(reviewId: string, isLike: boolean): Promise<InteractionResult> {
+    const userId = await getUserId();
+    if (!userId) return { success: false, error: 'Debes iniciar sesión para reaccionar.' };
+
     try {
         const existing = await prisma.reviewLike.findUnique({
             where: {
@@ -41,15 +56,22 @@ export async function toggleReviewReaction(reviewId: string, userId: string, isL
 }
 
 // Agregar Comentario
-export async function addReviewComment(reviewId: string, userId: string, content: string) {
-    try {
-        if (!content.trim()) return { success: false, error: 'El comentario está vacío' };
+export async function addReviewComment(reviewId: string, content: string): Promise<InteractionResult> {
+    const userId = await getUserId();
+    if (!userId) return { success: false, error: 'Debes iniciar sesión para comentar.' };
 
+    const text = content.trim();
+    if (!text) return { success: false, error: 'El comentario está vacío' };
+    if (text.length > COMMENT_MAX_LENGTH) {
+        return { success: false, error: `El comentario no puede superar ${COMMENT_MAX_LENGTH} caracteres.` };
+    }
+
+    try {
         await prisma.reviewComment.create({
             data: {
                 reviewId,
                 userId,
-                content,
+                content: text,
             },
         });
 
