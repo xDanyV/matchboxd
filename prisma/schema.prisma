@@ -94,9 +94,53 @@ model Competition {
   slug    String  @unique
   logoUrl String?
   type    String
+  apiId   Int?    @unique // id de la liga en API-Football
   matches Match[]
 
+  seasons   CompetitionSeason[]
+  standings Standing[]
+
   @@map("competitions")
+}
+
+// Control del sync diario: qué partes de cada temporada ya se descargaron
+model CompetitionSeason {
+  id                String      @id @default(cuid())
+  competitionId     String
+  competition       Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  season            String // "2024-2025", como Match.season
+  apiSeason         Int // 2024, como lo pide la API
+  fixturesSyncedAt  DateTime?
+  teamsSyncedAt     DateTime?
+  standingsSyncedAt DateTime?
+
+  @@unique([competitionId, season])
+  @@map("competition_seasons")
+}
+
+// Tabla de posiciones. En temporadas con grupos hay una tabla por grupo
+model Standing {
+  id            String      @id @default(cuid())
+  competitionId String
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  season        String
+  groupName     String      @default("")
+  rank          Int
+  teamId        String
+  team          Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  points        Int
+  played        Int
+  win           Int
+  draw          Int
+  lose          Int
+  goalsFor      Int
+  goalsAgainst  Int
+  goalsDiff     Int
+  form          String? // "LWWWW": últimos resultados, el más reciente PRIMERO (así lo manda la API)
+  description   String? // Lo que significa el puesto según la API (clasificación, playoff...)
+
+  @@unique([competitionId, season, groupName, teamId])
+  @@map("standings")
 }
 
 model Team {
@@ -113,11 +157,15 @@ model Team {
   venueCapacity Int?
   venueImageUrl String?
 
-  homeMatches Match[]      @relation("HomeTeam")
-  awayMatches Match[]      @relation("AwayTeam")
-  players     Player[]
-  fans        User[]       @relation("FavoriteTeam")
-  matchEvents MatchEvent[]
+  homeMatches  Match[]          @relation("HomeTeam")
+  awayMatches  Match[]          @relation("AwayTeam")
+  players      Player[]
+  fans         User[]           @relation("FavoriteTeam")
+  matchEvents  MatchEvent[]
+  matchStats   MatchTeamStats[]
+  lineups      MatchLineup[]
+  matchPlayers MatchPlayer[]
+  standings    Standing[]
 
   @@map("teams")
 }
@@ -132,7 +180,8 @@ model Player {
 
   team Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
-  mvpVotes MvpVote[]
+  mvpVotes   MvpVote[]
+  matchStats MatchPlayer[]
 
   @@map("players")
 }
@@ -153,6 +202,14 @@ model Match {
   summary   String?  @db.Text
   tags      String[]
 
+  // Detalle completo (sync diario): null mientras no se haya descargado
+  referee         String?
+  homeHalfScore   Int?
+  awayHalfScore   Int?
+  homePenalties   Int? // tanda de penales, si la hubo
+  awayPenalties   Int?
+  detailsSyncedAt DateTime?
+
   homeTeamId String
   homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
 
@@ -167,13 +224,75 @@ model Match {
   watchlist Watchlist[]
   logs      MatchLog[]
   events    MatchEvent[]
+  teamStats MatchTeamStats[]
+  lineups   MatchLineup[]
+  players   MatchPlayer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([competitionId])
   @@index([date])
+  @@index([season])
   @@map("matches")
+}
+
+// -------------------------------------------------------------
+// DETALLE DEL PARTIDO (estadísticas, alineaciones, jugadores)
+// -------------------------------------------------------------
+
+// Estadísticas de un equipo en un partido. `stats` usa claves propias (ver src/lib/match-stats.ts)
+model MatchTeamStats {
+  id      String @id @default(cuid())
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId  String
+  team    Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  stats   Json
+
+  @@unique([matchId, teamId])
+  @@map("match_team_stats")
+}
+
+model MatchLineup {
+  id            String  @id @default(cuid())
+  matchId       String
+  match         Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId        String
+  team          Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  formation     String?
+  coachName     String?
+  coachPhotoUrl String?
+  // Colores de la camiseta (hex sin #) para dibujar a los jugadores en la cancha
+  shirtColor    String?
+  numberColor   String?
+  keeperColor   String?
+
+  @@unique([matchId, teamId])
+  @@map("match_lineups")
+}
+
+// Un jugador en un partido: alineación + estadísticas individuales
+model MatchPlayer {
+  id        String  @id @default(cuid())
+  matchId   String
+  match     Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId    String
+  team      Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  number    Int?
+  position  String? // G, D, M o F
+  grid      String? // "fila:columna" en la cancha; solo titulares
+  isStarter Boolean @default(false)
+  isCaptain Boolean @default(false)
+  minutes   Int?
+  rating    Float? // nota de la API (0-10)
+  stats     Json? // goles, asistencias, remates, pases... (ver src/lib/match-stats.ts)
+
+  @@unique([matchId, playerId])
+  @@index([playerId])
+  @@map("match_players")
 }
 
 // -------------------------------------------------------------

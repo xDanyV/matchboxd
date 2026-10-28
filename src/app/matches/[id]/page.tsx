@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
@@ -9,6 +10,11 @@ import FloatingScoreHeader from '@/components/matches/FloatingScoreHeader';
 import MatchHeaderSection from '@/components/matches/MatchHeaderSection';
 import MatchRatingMvpSection from '@/components/matches/MatchRatingMvpSection';
 import SeenButton from '@/components/matches/SeenButton';
+import MatchStatsSection from '@/components/matches/MatchStatsSection';
+import LineupPitch, { type TeamLineupData } from '@/components/matches/LineupPitch';
+import PlayerStatsTable, { type PlayerRow } from '@/components/matches/PlayerStatsTable';
+import CommunityVsData from '@/components/matches/CommunityVsData';
+import { POSITION_LABELS, type PlayerMatchStats, type TeamStats } from '@/lib/match-stats';
 import { summarizeReviewTags } from '@/lib/review-tags';
 import type { TimelineEvent } from '@/lib/match-events';
 import type { Metadata } from 'next';
@@ -71,6 +77,9 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
             },
             mvpVotes: { include: { player: true } },
             events: { orderBy: { sortOrder: 'asc' } },
+            teamStats: true,
+            lineups: true,
+            players: { include: { player: { select: { name: true, photoUrl: true } } } },
         },
     });
 
@@ -118,6 +127,80 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
     });
     const mvpList = Object.values(mvpCounts).sort((a, b) => b.count - a.count);
 
+    // ---- Detalle del partido (sync diario): estadísticas, alineaciones y jugadores ----
+    const statsFor = (teamId: string) => (match.teamStats.find((s) => s.teamId === teamId)?.stats ?? {}) as TeamStats;
+    const hasTeamStats = match.teamStats.length > 0;
+
+    const playersOf = (teamId: string) => match.players.filter((p) => p.teamId === teamId);
+    const lineupOf = (team: typeof match.homeTeam): TeamLineupData | null => {
+        const lineup = match.lineups.find((l) => l.teamId === team.id);
+        if (!lineup) return null;
+        return {
+            team,
+            formation: lineup.formation,
+            coachName: lineup.coachName,
+            shirtColor: lineup.shirtColor,
+            numberColor: lineup.numberColor,
+            keeperColor: lineup.keeperColor,
+            players: playersOf(team.id).map((p) => ({
+                id: p.playerId,
+                name: p.player.name,
+                number: p.number,
+                position: p.position,
+                grid: p.grid,
+                isStarter: p.isStarter,
+                isCaptain: p.isCaptain,
+                minutes: p.minutes,
+                rating: p.rating,
+            })),
+        };
+    };
+    const homeLineup = lineupOf(match.homeTeam);
+    const awayLineup = lineupOf(match.awayTeam);
+
+    const tableRowsOf = (teamId: string): PlayerRow[] =>
+        playersOf(teamId).map((p) => ({
+            id: p.playerId,
+            name: p.player.name,
+            position: p.position,
+            isStarter: p.isStarter,
+            minutes: p.minutes,
+            rating: p.rating,
+            stats: (p.stats ?? {}) as PlayerMatchStats,
+        }));
+
+    // Candidatos a MVP: si hay alineación real, solo los que jugaron ese partido (no la plantilla actual)
+    const POSITION_ORDER: Record<string, number> = { G: 0, D: 1, M: 2, F: 3 };
+    const candidatesOf = (team: typeof match.homeTeam) => {
+        const played = playersOf(team.id).filter((p) => p.isStarter || (p.minutes ?? 0) > 0);
+        if (played.length === 0) return team.players;
+        return played
+            .sort((a, b) => Number(b.isStarter) - Number(a.isStarter) || (POSITION_ORDER[a.position ?? ''] ?? 9) - (POSITION_ORDER[b.position ?? ''] ?? 9))
+            .map((p) => ({ id: p.playerId, name: p.player.name, position: POSITION_LABELS[p.position ?? ''] ?? null, photoUrl: p.player.photoUrl }));
+    };
+    const matchForRating = {
+        ...match,
+        homeTeam: { ...match.homeTeam, players: candidatesOf(match.homeTeam) },
+        awayTeam: { ...match.awayTeam, players: candidatesOf(match.awayTeam) },
+    };
+
+    // La comunidad vs. los datos: MVP más votado frente a la mejor nota de la API
+    const topVoted = mvpList[0];
+    const bestRated = [...match.players]
+        .filter((p) => p.rating !== null)
+        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
+    const communityMvp = topVoted
+        ? { id: topVoted.player.id, name: topVoted.player.name, votes: topVoted.count, percent: Math.round((topVoted.count / totalMvpVotes) * 100) }
+        : null;
+    const topRated = bestRated
+        ? {
+            id: bestRated.playerId,
+            name: bestRated.player.name,
+            rating: bestRated.rating!,
+            teamName: bestRated.teamId === match.homeTeamId ? match.homeTeam.name : match.awayTeam.name,
+        }
+        : null;
+
     const timelineEvents = match.events.flatMap((event): TimelineEvent[] => {
         if (event.teamId !== match.homeTeamId && event.teamId !== match.awayTeamId) return [];
         return [{
@@ -145,9 +228,12 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                 {/* Acciones superiores */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-emerald-400">
+                        <Link
+                            href={`/competitions/${match.competition.slug}?season=${match.season}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-emerald-400 hover:border-emerald-500/40 transition-colors"
+                        >
                             {match.competition.name}
-                        </span>
+                        </Link>
                     </div>
                     <div className="flex items-center gap-2">
                         <SeenButton matchId={match.id} timesWatched={timesWatched} isAuthenticated={!!userId} />
@@ -170,7 +256,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
 
                 {/* Puntuación y MVP */}
                 <MatchRatingMvpSection
-                    match={match}
+                    match={matchForRating}
                     avgRating={avgRating}
                     tagSummary={tagSummary}
                     mvpList={mvpList}
@@ -192,6 +278,26 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                             awayScore={match.awayScore}
                         />
                     </div>
+                )}
+
+                <CommunityVsData communityMvp={communityMvp} topRated={topRated} />
+
+                {hasTeamStats && (
+                    <MatchStatsSection
+                        homeTeam={match.homeTeam}
+                        awayTeam={match.awayTeam}
+                        home={statsFor(match.homeTeamId)}
+                        away={statsFor(match.awayTeamId)}
+                    />
+                )}
+
+                {homeLineup && awayLineup && <LineupPitch home={homeLineup} away={awayLineup} />}
+
+                {match.players.length > 0 && (
+                    <PlayerStatsTable
+                        home={{ ...match.homeTeam, players: tableRowsOf(match.homeTeamId) }}
+                        away={{ ...match.awayTeam, players: tableRowsOf(match.awayTeamId) }}
+                    />
                 )}
 
                 {/* Reseñas */}

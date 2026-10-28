@@ -22,6 +22,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
         },
     },
+    // Página propia en vez de la genérica de Auth.js (también muestra los errores de inicio de sesión)
+    pages: {
+        signIn: '/login',
+        error: '/login',
+    },
     callbacks: {
         // Con sesiones en base de datos, `session` trae la fila completa (sessionToken, userId)
         // y `user` todas las columnas del usuario. Se devuelve solo lo que usa la app,

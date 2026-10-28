@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { loginHref } from '@/lib/login';
 import { useRouter } from 'next/navigation';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, X } from 'lucide-react';
 import { toggleReviewReaction, addReviewComment } from '@/app/actions/reviewInteractions';
@@ -71,7 +72,7 @@ export default function ReviewCommentsModal({
 
     const handleReaction = (isLike: boolean) => {
         if (!currentUserId) {
-            router.push('/api/auth/signin');
+            router.push(loginHref(window.location.pathname));
             return;
         }
 
@@ -111,7 +112,7 @@ export default function ReviewCommentsModal({
         if (!commentText.trim()) return;
 
         if (!currentUserId) {
-            router.push('/api/auth/signin');
+            router.push(loginHref(window.location.pathname));
             return;
         }
 

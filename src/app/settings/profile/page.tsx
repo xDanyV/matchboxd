@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { loginHref } from '@/lib/login';
 import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { getSession } from '@/lib/session';
@@ -10,7 +11,7 @@ export default async function ProfileSettingsPage() {
     const session = await getSession();
 
     if (!session?.user?.id) {
-        redirect('/api/auth/signin?callbackUrl=/settings/profile');
+        redirect(loginHref('/settings/profile'));
     }
 
     const username = await ensureUsername(session.user.id);

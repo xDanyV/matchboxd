@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sanitizeReviewTags } from '@/lib/review-tags';
+import { isValidRating } from '@/lib/rating';
 import { parseMatchLogInput, type MatchLogInput } from '@/lib/diary';
 import { BLOCKED_CONTENT_MESSAGE, checkContent } from '@/lib/content-filter';
 import { checkRateLimit, clearAutomaticFlags, flagAutomatically } from '@/lib/auto-moderation';
@@ -33,8 +34,8 @@ export async function submitReview(data: SubmitReviewInput): Promise<SubmitRevie
 
     const userId = session.user.id;
 
-    if (data.rating < 1 || data.rating > 10) {
-        return { success: false, error: 'La calificación debe estar entre 1 y 10.' };
+    if (!isValidRating(data.rating)) {
+        return { success: false, error: 'La calificación debe ir de 0.5 a 10, en pasos de medio punto.' };
     }
 
     const content = data.content?.trim() || null;
@@ -51,8 +52,25 @@ export async function submitReview(data: SubmitReviewInput): Promise<SubmitRevie
     // Etiquetas: se validan en el servidor (catálogo, máximo y opuestas)
     const tags = data.tags === undefined ? undefined : sanitizeReviewTags(data.tags);
 
-    const match = await prisma.match.findUnique({ where: { id: data.matchId }, select: { date: true } });
+    const match = await prisma.match.findUnique({
+        where: { id: data.matchId },
+        select: { date: true, homeTeamId: true, awayTeamId: true, _count: { select: { players: true } } },
+    });
     if (!match) return { success: false, error: 'El partido no existe.' };
+
+    // El MVP tiene que ser alguien que jugó ese partido (o, sin alineación, de uno de los dos equipos)
+    if (data.mvpPlayerId) {
+        const candidate = match._count.players > 0
+            ? await prisma.matchPlayer.findFirst({
+                where: { matchId: data.matchId, playerId: data.mvpPlayerId, OR: [{ isStarter: true }, { minutes: { gt: 0 } }] },
+                select: { id: true },
+            })
+            : await prisma.player.findFirst({
+                where: { id: data.mvpPlayerId, teamId: { in: [match.homeTeamId, match.awayTeamId] } },
+                select: { id: true },
+            });
+        if (!candidate) return { success: false, error: 'Ese jugador no participó en este partido.' };
+    }
 
     let log: ReturnType<typeof parseMatchLogInput> | null = null;
     try {
