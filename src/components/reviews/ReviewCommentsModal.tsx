@@ -49,6 +49,7 @@ export default function ReviewCommentsModal({
     const router = useRouter();
     const [commentText, setCommentText] = useState('');
     const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
     // Estados locales para reflejar los likes y comentarios al instante
     const [localLikes, setLocalLikes] = useState<ReviewLikeRecord[]>(review.likes);
@@ -63,7 +64,14 @@ export default function ReviewCommentsModal({
     if (!isOpen) return null;
 
     const handleReaction = (isLike: boolean) => {
-        
+        if (!currentUserId) {
+            router.push('/api/auth/signin');
+            return;
+        }
+
+        setError(null);
+        const previousLikes = localLikes;
+
         setLocalLikes((prevLikes) => {
             const existingIndex = prevLikes.findIndex((l) => l.userId === currentUserId);
             if (existingIndex > -1) {
@@ -81,9 +89,13 @@ export default function ReviewCommentsModal({
         });
 
         startTransition(async () => {
-            const res = await toggleReviewReaction(review.id, currentUserId, isLike);
+            const res = await toggleReviewReaction(review.id, isLike);
             if (res.success) {
                 router.refresh();
+            } else {
+                // El servidor lo rechazó: se deshace el cambio optimista
+                setLocalLikes(previousLikes);
+                setError(res.error);
             }
         });
     };
@@ -91,6 +103,13 @@ export default function ReviewCommentsModal({
     const handleAddComment = (e: React.FormEvent) => {
         e.preventDefault();
         if (!commentText.trim()) return;
+
+        if (!currentUserId) {
+            router.push('/api/auth/signin');
+            return;
+        }
+
+        setError(null);
 
         const tempComment: Comment = {
             id: Date.now().toString(),
@@ -107,10 +126,14 @@ export default function ReviewCommentsModal({
         setCommentText('');
 
         startTransition(async () => {
-            const res = await addReviewComment(review.id, currentUserId, textToSend);
+            const res = await addReviewComment(review.id, textToSend);
             if (res.success) {
                 router.refresh();
                 onClose(); //
+            } else {
+                setLocalComments((prev) => prev.filter((comment) => comment.id !== tempComment.id));
+                setCommentText(textToSend);
+                setError(res.error);
             }
         });
     };
@@ -216,10 +239,17 @@ export default function ReviewCommentsModal({
                     </div>
                 </div>
 
+                {error && (
+                    <p role="alert" className="mx-4 mt-3 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2">
+                        {error}
+                    </p>
+                )}
+
                 {/* Input para Nuevo Comentario */}
                 <form onSubmit={handleAddComment} className="p-4 border-t border-slate-800 bg-slate-900 flex items-center gap-2">
                     <input
                         type="text"
+                        maxLength={1000}
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         placeholder="Escribe un comentario sobre esta reseña..."
