@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Calendar, MessageSquare, Settings } from 'lucide-react';
+import { Calendar, MessageSquare, Settings, ShieldCheck } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import ReviewCardClient from '@/components/reviews/ReviewCardClient';
@@ -102,6 +102,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
 
     const viewerId = session?.user?.id ?? '';
     const isOwner = viewerId !== '' && viewerId === user.id;
+    const viewerIsAdmin = session?.user?.role === 'ADMIN';
     const displayName = user.name ?? user.username ?? 'Usuario';
 
     const memberSince = user.createdAt.toLocaleDateString('es-ES', {
@@ -167,13 +168,25 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                     </div>
 
                     {isOwner && (
-                        <Link
-                            href="/settings/profile"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 text-xs sm:text-sm font-bold transition-all shrink-0 w-fit"
-                        >
-                            <Settings className="w-4 h-4" />
-                            Editar perfil
-                        </Link>
+                        <div className="flex flex-wrap sm:flex-col gap-2 shrink-0">
+                            <Link
+                                href="/settings/profile"
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 text-xs sm:text-sm font-bold transition-all w-fit sm:w-full"
+                            >
+                                <Settings className="w-4 h-4" />
+                                Editar perfil
+                            </Link>
+                            {/* En móvil la barra inferior no tiene hueco: el acceso a moderación vive aquí */}
+                            {viewerIsAdmin && (
+                                <Link
+                                    href="/admin/reports"
+                                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-500/50 text-xs sm:text-sm font-bold transition-all w-fit sm:w-full"
+                                >
+                                    <ShieldCheck className="w-4 h-4" />
+                                    Moderación
+                                </Link>
+                            )}
+                        </div>
                     )}
                 </div>
             </section>
@@ -228,6 +241,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                                     key={review.id}
                                     review={review}
                                     currentUserId={viewerId}
+                                    isAdmin={viewerIsAdmin}
                                     formattedDate={formattedDate}
                                     likesCount={likesCount}
                                     dislikesCount={dislikesCount}

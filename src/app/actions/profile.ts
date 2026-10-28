@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { BLOCKED_CONTENT_MESSAGE, checkContent } from '@/lib/content-filter';
 
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
 const BIO_MAX_LENGTH = 160;
@@ -38,6 +39,12 @@ export async function updateProfile(data: UpdateProfileInput): Promise<UpdatePro
 
     if (bio.length > BIO_MAX_LENGTH) {
         return { success: false, error: `La bio no puede superar ${BIO_MAX_LENGTH} caracteres.` };
+    }
+
+    // En el perfil solo se bloquea lo grave: no hay cola de moderación para nombres y bios.
+    // El usuario puede tener guion bajo como separador ("te_voy_a_matar"), por eso se revisa con espacios.
+    if (checkContent(username.replace(/_/g, ' '), bio).level === 'block') {
+        return { success: false, error: BLOCKED_CONTENT_MESSAGE };
     }
 
     if (data.favoriteTeamId) {

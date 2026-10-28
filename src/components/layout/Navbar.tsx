@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut, User, Home } from 'lucide-react';
+import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut, User, Home, ShieldCheck } from 'lucide-react';
 import { signIn, signOut } from '@/auth';
 import { getSession } from '@/lib/session';
 import GlobalSearch from '@/components/search/GlobalSearch';
@@ -55,6 +55,17 @@ export default async function Navbar() {
                                 >
                                     <MessageSquare className="w-4.5 h-4.5 text-slate-400 shrink-0" />
                                     <span>Mis Reseñas</span>
+                                </Link>
+                            )}
+
+                            {session?.user?.role === 'ADMIN' && (
+                                <Link
+                                    href="/admin/reports"
+                                    aria-label="Moderación"
+                                    title="Moderación"
+                                    className="flex items-center p-2 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-slate-900/70 transition-all"
+                                >
+                                    <ShieldCheck className="w-4.5 h-4.5 shrink-0" />
                                 </Link>
                             )}
 

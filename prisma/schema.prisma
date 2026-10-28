@@ -25,6 +25,7 @@ model User {
   sessions       Session[]
   favoriteTeamId String?
   favoriteTeam   Team?     @relation("FavoriteTeam", fields: [favoriteTeamId], references: [id], onDelete: SetNull)
+  role           UserRole  @default(USER)
 
   reviews     Review[]
   mvpVotes    MvpVote[]
@@ -32,11 +33,17 @@ model User {
   matchLogs   MatchLog[]
   reviewLikes ReviewLike[]
   comments    ReviewComment[]
+  reports     Report[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 model Account {
@@ -229,6 +236,7 @@ model Review {
 
   likes    ReviewLike[]
   comments ReviewComment[]
+  reports  Report[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,10 +265,58 @@ model ReviewComment {
   reviewId  String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reports   Report[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([reviewId])
+  // Límite de frecuencia: comentarios recientes de un usuario
+  @@index([userId, createdAt])
   @@map("review_comments")
+}
+
+// -------------------------------------------------------------
+// MODERACIÓN
+// -------------------------------------------------------------
+enum ReportReason {
+  SPAM
+  OFFENSIVE
+  UNMARKED_SPOILER
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  DISMISSED
+}
+
+// Un reporte apunta a una reseña o a un comentario (exactamente uno de los dos).
+// Si el contenido se elimina, sus reportes se van con él: no queda nada pendiente que revisar.
+model Report {
+  id      String       @id @default(cuid())
+  reason  ReportReason
+  details String?
+  status  ReportStatus @default(PENDING)
+
+  // Sin autor cuando lo crea el filtro automático de lenguaje
+  reporterId String?
+  reporter   User?   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  automatic  Boolean @default(false)
+
+  reviewId String?
+  review   Review? @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   ReviewComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Cada usuario reporta una vez cada contenido (en Postgres los NULL no chocan entre sí)
+  @@unique([reporterId, reviewId])
+  @@unique([reporterId, commentId])
+  @@index([status, createdAt])
+  @@index([reporterId, createdAt])
+  @@map("reports")
 }
 
 model MvpVote {

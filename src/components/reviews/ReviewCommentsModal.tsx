@@ -4,11 +4,14 @@ import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, X } from 'lucide-react';
 import { toggleReviewReaction, addReviewComment } from '@/app/actions/reviewInteractions';
+import ContentActions from '@/components/moderation/ContentActions';
 
 interface Comment {
     id: string;
     content: string;
     createdAt: Date;
+    /** Ausente en el comentario optimista que aún no confirma el servidor */
+    userId?: string;
     user: {
         name: string | null;
         image: string | null;
@@ -23,6 +26,7 @@ interface ReviewLikeRecord {
 interface ReviewCommentsModalProps {
     review: {
         id: string;
+        userId: string;
         title: string | null;
         content: string | null;
         rating: number;
@@ -36,6 +40,7 @@ interface ReviewCommentsModalProps {
         comments: Comment[];
     };
     currentUserId: string;
+    isAdmin?: boolean;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -43,6 +48,7 @@ interface ReviewCommentsModalProps {
 export default function ReviewCommentsModal({
     review,
     currentUserId,
+    isAdmin = false,
     isOpen,
     onClose,
 }: ReviewCommentsModalProps) {
@@ -223,13 +229,28 @@ export default function ReviewCommentsModal({
                             ) : (
                                 localComments.map((comment) => (
                                     <div key={comment.id} className="bg-slate-800/40 border border-slate-800 rounded-xl p-3 space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-white">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-xs font-bold text-white truncate">
                                                 {comment.user.name || 'Usuario Anónimo'}
                                             </span>
-                                            <span className="text-[10px] text-slate-500">
-                                                {new Date(comment.createdAt).toLocaleDateString()}
-                                            </span>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <span className="text-[10px] text-slate-500">
+                                                    {new Date(comment.createdAt).toLocaleDateString()}
+                                                </span>
+                                                {comment.userId && (
+                                                    <ContentActions
+                                                        kind="comment"
+                                                        id={comment.id}
+                                                        authorId={comment.userId}
+                                                        reviewAuthorId={review.userId}
+                                                        currentUserId={currentUserId}
+                                                        isAdmin={isAdmin}
+                                                        onDeleted={() =>
+                                                            setLocalComments((prev) => prev.filter((c) => c.id !== comment.id))
+                                                        }
+                                                    />
+                                                )}
+                                            </div>
                                         </div>
                                         <p className="text-xs text-slate-300">{comment.content}</p>
                                     </div>

@@ -7,10 +7,12 @@ import ReviewCommentsModal from './ReviewCommentsModal';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 import { ReviewTagList } from '@/components/reviews/ReviewTagChip';
+import ContentActions from '@/components/moderation/ContentActions';
 
 interface ReviewCardClientProps {
     review: any;
     currentUserId: string;
+    isAdmin?: boolean;
     formattedDate: string;
     likesCount: number;
     dislikesCount: number;
@@ -55,6 +57,7 @@ function TeamChip({
 export default function ReviewCardClient({
     review,
     currentUserId,
+    isAdmin = false,
     formattedDate,
     likesCount,
 }: ReviewCardClientProps) {
@@ -162,13 +165,22 @@ export default function ReviewCardClient({
                         </button>
                     </div>
 
-                    <Link
-                        href={match.id ? `/matches/${match.id}` : '#'}
-                        className="text-slate-400 hover:text-emerald-400 font-medium transition-colors flex items-center gap-1 text-[11px] sm:text-xs ml-auto sm:ml-0"
-                    >
-                        <span>Ver partido</span>
-                        <ArrowRight className="w-3 h-3" />
-                    </Link>
+                    <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                        <ContentActions
+                            kind="review"
+                            id={review.id}
+                            authorId={review.userId}
+                            currentUserId={currentUserId}
+                            isAdmin={isAdmin}
+                        />
+                        <Link
+                            href={match.id ? `/matches/${match.id}` : '#'}
+                            className="text-slate-400 hover:text-emerald-400 font-medium transition-colors flex items-center gap-1 text-[11px] sm:text-xs"
+                        >
+                            <span>Ver partido</span>
+                            <ArrowRight className="w-3 h-3" />
+                        </Link>
+                    </div>
                 </div>
             </article>
 
@@ -176,6 +188,7 @@ export default function ReviewCardClient({
             <ReviewCommentsModal
                 review={review}
                 currentUserId={currentUserId}
+                isAdmin={isAdmin}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
             />

@@ -5,6 +5,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sanitizeReviewTags } from '@/lib/review-tags';
 import { parseMatchLogInput, type MatchLogInput } from '@/lib/diary';
+import { BLOCKED_CONTENT_MESSAGE, checkContent } from '@/lib/content-filter';
+import { checkRateLimit, clearAutomaticFlags, flagAutomatically } from '@/lib/auto-moderation';
 
 interface SubmitReviewInput {
     matchId: string;
@@ -19,17 +21,20 @@ interface SubmitReviewInput {
     log?: MatchLogInput;
 }
 
-export async function submitReview(data: SubmitReviewInput) {
+type SubmitReviewResult = { success: true; reviewId: string } | { success: false; error: string };
+
+// Los errores se devuelven en vez de lanzarse: en producción Next oculta el mensaje de un throw
+export async function submitReview(data: SubmitReviewInput): Promise<SubmitReviewResult> {
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error('Debes iniciar sesion para calificar este partido.');
+        return { success: false, error: 'Debes iniciar sesión para calificar este partido.' };
     }
 
     const userId = session.user.id;
 
     if (data.rating < 1 || data.rating > 10) {
-        throw new Error('La calificacion debe estar entre 1 y 10.');
+        return { success: false, error: 'La calificación debe estar entre 1 y 10.' };
     }
 
     const content = data.content?.trim() || null;
@@ -37,13 +42,24 @@ export async function submitReview(data: SubmitReviewInput) {
     const title = content ? data.title?.trim() || null : null;
     const hasSpoilers = content ? data.hasSpoilers || false : false;
 
+    const filter = checkContent(title, content);
+    if (filter.level === 'block') return { success: false, error: BLOCKED_CONTENT_MESSAGE };
+
+    const rateLimitError = await checkRateLimit('review', userId);
+    if (rateLimitError) return { success: false, error: rateLimitError };
+
     // Etiquetas: se validan en el servidor (catálogo, máximo y opuestas)
     const tags = data.tags === undefined ? undefined : sanitizeReviewTags(data.tags);
 
     const match = await prisma.match.findUnique({ where: { id: data.matchId }, select: { date: true } });
-    if (!match) throw new Error('El partido no existe.');
+    if (!match) return { success: false, error: 'El partido no existe.' };
 
-    const log = data.log ? parseMatchLogInput(data.log, match.date) : null;
+    let log: ReturnType<typeof parseMatchLogInput> | null = null;
+    try {
+        log = data.log ? parseMatchLogInput(data.log, match.date) : null;
+    } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'La entrada del diario no es válida.' };
+    }
 
     const review = await prisma.$transaction(async (tx) => {
         // 1. Guardar o actualizar la reseña
@@ -101,7 +117,14 @@ export async function submitReview(data: SubmitReviewInput) {
         return saved;
     });
 
-    // 4. Revalidar cache de rutas afectadas
+    // 4. Groserías: se publica, pero queda en la cola de moderación
+    if (filter.level === 'flag') {
+        await flagAutomatically({ reviewId: review.id }, filter.matches);
+    } else {
+        await clearAutomaticFlags({ reviewId: review.id });
+    }
+
+    // 5. Revalidar cache de rutas afectadas
     revalidatePath(`/matches/${data.matchId}`);
     revalidatePath('/');
     if (log) revalidatePath('/watchlist');
