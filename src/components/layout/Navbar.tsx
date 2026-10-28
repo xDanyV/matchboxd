@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut, User, Home, ShieldCheck } from 'lucide-react';
-import { signIn, signOut } from '@/auth';
+import { signOut } from '@/auth';
 import { getSession } from '@/lib/session';
 import GlobalSearch from '@/components/search/GlobalSearch';
 
@@ -106,20 +106,13 @@ export default async function Navbar() {
                                     </form>
                                 </div>
                             ) : (
-                                <form
-                                    action={async () => {
-                                        'use server';
-                                        await signIn();
-                                    }}
+                                <Link
+                                    href="/login"
+                                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-full text-sm font-bold transition-all active:scale-95"
                                 >
-                                    <button
-                                        type="submit"
-                                        className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-full text-sm font-bold transition-all active:scale-95"
-                                    >
                                         <LogIn className="w-4 h-4" />
                                         <span>Ingresar</span>
-                                    </button>
-                                </form>
+                                    </Link>
                             )}
                         </nav>
 
@@ -219,21 +212,14 @@ export default async function Navbar() {
                             </div>
                         </div>
                     ) : (
-                        <form
-                            action={async () => {
-                                'use server';
-                                await signIn();
-                            }}
+                        <Link
+                            href="/login"
+                            aria-label="Ingresar"
+                            className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
                         >
-                            <button
-                                type="submit"
-                                aria-label="Ingresar"
-                                className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
-                            >
                                 <LogIn className="w-5 h-5" />
                                 <span className="text-[10px] font-medium">Entrar</span>
-                            </button>
-                        </form>
+                            </Link>
                     )}
                 </div>
             </nav>

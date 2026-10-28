@@ -1,4 +1,5 @@
 import { getSession } from '@/lib/session';
+import { loginHref } from '@/lib/login';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -10,7 +11,7 @@ export default async function WatchlistPage() {
     const session = await getSession();
 
     if (!session?.user) {
-        redirect('/api/auth/signin');
+        redirect(loginHref('/watchlist'));
     }
 
     const items = await prisma.watchlist.findMany({

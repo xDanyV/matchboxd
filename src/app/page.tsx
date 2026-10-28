@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import MatchCard from '@/components/matches/MatchCard';
-import { Flame, Calendar, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Flame, Calendar, Trophy, ChevronLeft, ChevronRight, ListOrdered } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -199,6 +199,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   Explorar partidos
                 </h2>
               </div>
+              <Link
+                href={`/competitions/uefa-champions-league?season=${currentSeason}`}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                <ListOrdered className="h-4 w-4" />
+                Tabla y goleadores de {currentSeason}
+              </Link>
             </div>
 
             <div

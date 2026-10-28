@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { loginHref } from '@/lib/login';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Star, X, Sparkles, Loader2, AlertCircle, User, BookOpen } from 'lucide-react';
+import { X, Sparkles, Loader2, AlertCircle, User, BookOpen } from 'lucide-react';
 import type { WatchMethod } from '@prisma/client';
 import { submitReview } from '@/app/actions/review';
 import ReviewTagPicker from '@/components/reviews/ReviewTagPicker';
+import HalfStarRating from '@/components/matches/HalfStarRating';
 import { sanitizeReviewTags, type ReviewTagSlug } from '@/lib/review-tags';
 import { WATCH_METHODS, toDateInputValue } from '@/lib/watch-methods';
 
@@ -66,7 +68,6 @@ export default function ReviewModal({
     const [isPending, startTransition] = useTransition();
 
     const [rating, setRating] = useState<number>(existingReview?.rating ?? 8);
-    const [hoverRating, setHoverRating] = useState<number | null>(null);
     const [title, setTitle] = useState(existingReview?.title ?? '');
     const [content, setContent] = useState(existingReview?.content ?? '');
     const [mvpPlayerId, setMvpPlayerId] = useState(existingMvpPlayerId ?? '');
@@ -92,7 +93,7 @@ export default function ReviewModal({
         setError(null);
 
         if (!isAuthenticated) {
-            router.push('/api/auth/signin');
+            router.push(loginHref(window.location.pathname));
             return;
         }
 
@@ -155,36 +156,7 @@ export default function ReviewModal({
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Selector de Puntuación */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
-                            <span>Puntuación</span>
-                            <span className="text-emerald-400 font-mono text-base font-black">
-                                {hoverRating !== null ? hoverRating : rating} / 10
-                            </span>
-                        </label>
-
-                        <div className="flex items-center justify-between sm:gap-1 bg-slate-950/60 p-2 sm:p-2.5 rounded-2xl border border-slate-800">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => {
-                                const active = (hoverRating !== null ? hoverRating : rating) >= val;
-                                return (
-                                    <button
-                                        key={val}
-                                        type="button"
-                                        onMouseEnter={() => setHoverRating(val)}
-                                        onMouseLeave={() => setHoverRating(null)}
-                                        onClick={() => setRating(val)}
-                                        aria-label={`${val} de 10`}
-                                        className="p-0.5 sm:p-1 text-slate-600 transition-transform hover:scale-110"
-                                    >
-                                        <Star
-                                            className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${active ? 'fill-amber-400 text-amber-400' : 'text-slate-700'
-                                                }`}
-                                        />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <HalfStarRating value={rating} onChange={setRating} />
 
                     {/* Diario */}
                     <fieldset className="space-y-3 bg-slate-950/40 border border-slate-800 rounded-2xl p-3.5">

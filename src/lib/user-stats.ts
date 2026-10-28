@@ -17,7 +17,7 @@ export interface UserStats {
     ratingsCount: number;
     writtenReviews: number;
     averageRating: number | null;
-    /** Índice 0 = nota 1 ... índice 9 = nota 10 */
+    /** Medios puntos: índice 0 = nota 0.5 ... índice 19 = nota 10 */
     ratingDistribution: number[];
     topTeam: { team: StatsTeam; count: number } | null;
     topTag: { slug: string; label: string; count: number } | null;
@@ -58,13 +58,14 @@ export async function getUserStats(userId: string): Promise<UserStats> {
         }
     }
 
-    const ratingDistribution = Array.from({ length: 10 }, () => 0);
+    const ratingDistribution = Array.from({ length: 20 }, () => 0);
     const tagCounts = new Map<string, number>();
     let ratingTotal = 0;
 
     for (const review of reviews) {
         ratingTotal += review.rating;
-        const bucket = Math.min(10, Math.max(1, Math.round(review.rating)));
+        // Las notas antiguas son enteras y las nuevas van de medio en medio: ambas caen en su casilla
+        const bucket = Math.min(20, Math.max(1, Math.round(review.rating * 2)));
         ratingDistribution[bucket - 1] += 1;
         for (const tag of review.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
     }

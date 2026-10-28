@@ -3,6 +3,7 @@ import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
 import type { UserStats } from '@/lib/user-stats';
+import { formatRating } from '@/lib/rating';
 
 function StatTile({ icon: Icon, label, value }: { icon: typeof Eye; label: string; value: string | number }) {
     return (
@@ -45,17 +46,23 @@ export default function ProfileStats({ stats }: { stats: UserStats }) {
                 <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Distribución de notas</h3>
                     {stats.ratingsCount > 0 ? (
-                        <div className="flex items-end gap-1.5 h-28" role="img" aria-label="Cantidad de partidos por nota del 1 al 10">
-                            {stats.ratingDistribution.map((count, index) => (
-                                <div key={index} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                                    <div
-                                        title={`${count} ${count === 1 ? 'partido' : 'partidos'} con ${index + 1}`}
-                                        className={`w-full rounded-t-md ${count > 0 ? 'bg-emerald-500/80' : 'bg-slate-800'}`}
-                                        style={{ height: `${Math.max((count / maxBucket) * 100, 4)}%` }}
-                                    />
-                                    <span className="text-[10px] font-mono text-slate-500">{index + 1}</span>
-                                </div>
-                            ))}
+                        <div className="flex items-end gap-0.5 sm:gap-1 h-28" role="img" aria-label="Cantidad de partidos por nota, de 0.5 a 10">
+                            {stats.ratingDistribution.map((count, index) => {
+                                const value = (index + 1) / 2;
+                                return (
+                                    <div key={index} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                                        <div
+                                            title={`${count} ${count === 1 ? 'partido' : 'partidos'} con ${formatRating(value)}`}
+                                            className={`w-full rounded-t-sm ${count > 0 ? 'bg-emerald-500/80' : 'bg-slate-800'}`}
+                                            style={{ height: `${Math.max((count / maxBucket) * 100, 4)}%` }}
+                                        />
+                                        {/* Solo se rotulan los enteros: 20 etiquetas no caben en móvil */}
+                                        <span className="text-[10px] font-mono text-slate-500 h-3 leading-3">
+                                            {Number.isInteger(value) ? value : ''}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <p className="text-xs text-slate-500 italic">Aún no hay calificaciones.</p>

@@ -15,11 +15,13 @@ For now it focuses on the **UEFA Champions League**, with match data coming from
 
 - **Browse matches** by season, with pagination.
 - **Top matches** ranking based on community ratings.
-- **Match page** with score, venue, community rating, MVP voting, a match **timeline** (goals, cards, substitutions and VAR checks) and the reviews wall.
-- **Reviews** with a 1-10 rating, title, spoiler flag, likes/dislikes and comments. The text is optional: a review without text is just a rating.
-- **Diary**: log every time you watch a match (date, how you watched it — stadium, TV, streaming, replay or highlights — and whether it was a rewatch), from the rating dialog or with one click on "Marcar como visto".- **Review tags** (up to 3 per review, such as epic, comeback, dramatic, controversial, goal fest, tactical or boring). The most voted tags of a match are highlighted on its card and page.
+- **Match page** with score (half-time and penalty shoot-out), venue, referee, community rating, MVP voting, a match **timeline** (goals, cards, substitutions and VAR checks), **team stats** (possession, xG, shots, passes, corners...), **line-ups drawn on a pitch** with kit colors and player ratings, a **player stats table**, a "community vs. the numbers" card (community MVP against the best rated player) and the reviews wall. MVP candidates come from the real line-up of that match.
+- **Reviews** with a 0.5-10 rating (half points), title, spoiler flag, likes/dislikes and comments. The text is optional: a review without text is just a rating.
+- **Diary**: log every time you watch a match (date, how you watched it — stadium, TV, streaming, replay or highlights — and whether it was a rewatch), from the rating dialog or with one click on "Marcar como visto".
+- **Review tags** (up to 3 per review, such as epic, comeback, dramatic, controversial, goal fest, tactical or boring). The most voted tags of a match are highlighted on its card and page.
 - **Watchlist** ("Por Ver") to save matches for later. Logging a match in the diary removes it from the list.
-- **Google sign-in** with Auth.js.
+- **Competition pages** (`/competitions/[slug]`) with the standings (one table per group in group-stage seasons, qualification zones and recent form), top scorers, assists, yellow and red cards per season. The leaders are computed from the stored player stats of each match (group/league phase and knockout rounds, with the club the player had at the time), because the API leaderboards mix in qualifying rounds and show the player's current club.
+- **Google sign-in** with Auth.js, with a custom login page (`/login`) that returns users to the page they came from.
 - **User profiles** (`/u/[username]`) with editable username, bio and favorite team, personal stats (matches watched, stadium visits, rewatches, average rating, rating distribution, most watched team, favorite tag), the diary and recent reviews.
 - **Share cards**: dynamic Open Graph images for matches (no score, so links never spoil the result) and profiles. The share button uses the native share menu and falls back to copying the link.
 - **Moderation**: users can delete their own reviews and comments (and comments on their reviews), and report other people's content (spam, offensive, unmarked spoiler, other). Admins review reports grouped by content at `/admin/reports` and can dismiss them or delete the content.
@@ -91,6 +93,7 @@ npx prisma db push
 ```bash
 npm run seed          # matches, team details and squads
 npm run sync:events   # goals, cards and substitutions for each match
+npm run sync:daily    # all matches, standings and full match details (run it every day)
 ```
 
 ### 5. Run the app
@@ -120,6 +123,7 @@ When you deploy, add the production callback URL (`https://your-domain/api/auth/
 | `npm run seed -- --squads` | Same, and also refreshes the squads of every team. |
 | `npm run enrich:teams` | Updates team details (country, founding year, venue) for existing teams. Add `-- --squads` to refresh squads too. |
 | `npm run sync:events` | Imports match events into the timeline. Flags: `--force` (redo every match), `--match=<id>` (one match), `--probe=<apiFixtureId>` (inspect the API response without writing to the database). |
+| `npm run sync:daily` | Fills the database a little every day with the free quota: every match of the 2022-2024 seasons, team details and standings (once per season), then the full detail of each match (events, line-ups, team and player stats, 1 request per match). Matches with reviews go first. Flags: `--budget=<n>` (requests to spend, 90 by default), `--refresh` (download season data again). |
 | `npm run backfill:logs` | Creates a diary entry for every review that has none (reviews written before the diary existed) and removes those matches from the watchlist. Run it once after updating the schema. |
 | `npm run set-role -- <username> <admin\|user>` | Promotes a user to admin (or back to user). There is no UI for this on purpose. The change applies on the user's next request. |
 
@@ -132,7 +136,22 @@ The free API-Football plan has a small daily request quota and a per-minute limi
 - Team details are requested once per season, not once per team.
 - Squads are only downloaded for teams that do not have players yet.
 - Matches that already have events are skipped by `sync:events`.
+- `sync:daily` spends a fixed budget (90 by default) and keeps a reserve of 5 requests. Each match detail costs a single request (`/fixtures?id=`), which returns events, line-ups and stats together.
+- The free plan only covers the 2022-2024 seasons; the current season needs a paid plan.
 - Requests are spaced out, the per-minute limit is retried automatically and the scripts stop cleanly when the daily quota runs out. Just run them again the next day.
+
+### Daily sync with GitHub Actions
+
+`.github/workflows/daily-sync.yml` runs `sync:daily` every day at 00:30 UTC (half an hour after the quota resets), so the database keeps filling up even when your computer is off. You can also run it by hand from the **Actions** tab, choosing the budget.
+
+It needs two repository secrets (**Settings → Secrets and variables → Actions**):
+
+| Secret | Value |
+| --- | --- |
+| `DATABASE_URL` | The same connection string as your `.env` |
+| `FOOTBALL_API_KEY` | Your API-Football key |
+
+If you also run the scripts locally on the same day, they share the same 100 daily requests.
 
 ## Project structure
 
@@ -161,17 +180,15 @@ src/
 
 ## Known limitations
 
-- The squad shown on team pages is the **current** squad, which can differ from the squads of historical matches. For the same reason, the MVP candidates of an old match come from the current squads.
-- Penalty shoot-out kicks are not shown in the timeline, and the shoot-out result is not stored yet.
-- Only the Champions League seasons listed in `prisma/seed.ts` are loaded, and only a limited number of matches per season.
+- The squad shown on team pages is the **current** squad, which can differ from the squads of historical matches. Matches without synced details still use the current squads as MVP candidates.
+- Penalty shoot-out kicks are not shown in the timeline (the shoot-out result is shown in the header).
+- Only the Champions League is loaded, and only the seasons the free API plan allows (2022-2024).
 
 ## Roadmap
 
-- Match line-ups drawn on a pitch, and real line-ups for MVP candidates.
 - Player pages and a teams index.
 - Custom lists ("Best finals", "Impossible comebacks").
 - Following other users and an activity feed.
-- Personal stats and a watched-matches diary.
 - Baseline database migration.
 
 ## Disclaimer

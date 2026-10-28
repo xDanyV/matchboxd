@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { loginHref } from '@/lib/login';
 import { useRouter } from 'next/navigation';
 import { Eye, Loader2 } from 'lucide-react';
 import { logMatch } from '@/app/actions/diary';
@@ -32,7 +33,7 @@ export default function SeenButton({ matchId, timesWatched, isAuthenticated }: S
 
     const handleClick = () => {
         if (!isAuthenticated) {
-            router.push('/api/auth/signin');
+            router.push(loginHref(window.location.pathname));
             return;
         }
 

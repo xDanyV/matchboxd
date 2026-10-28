@@ -1,4 +1,5 @@
-import { MatchEventType, Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { buildDrafts, resolveOwnGoals, classify, isShootout, type ApiEvent } from './lib/match-events';
 
 const prisma = new PrismaClient();
 
@@ -10,43 +11,14 @@ const RATE_LIMIT_WAIT_MS = 65_000;
 const MAX_RATE_LIMIT_RETRIES = 2;
 const DATE_TOLERANCE_MS = 36 * 60 * 60 * 1000;
 
-/**
- * En API-Football, en un cambio ("subst") `player` suele ser quien SALE y `assist` quien ENTRA.
- * Verifícalo con `npm run sync:events -- --probe=<id>` y cambia este valor si es al revés.
- */
-const SUB_PLAYER_IS_OUT = true;
-
 const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
 const MATCH_ID = args.find((arg) => arg.startsWith('--match='))?.split('=')[1];
 const PROBE_ID = args.find((arg) => arg.startsWith('--probe='))?.split('=')[1];
 
-type Side = 'home' | 'away';
-
 interface ApiFixture {
     fixture: { id: number; date: string };
     teams: { home: { id: number }; away: { id: number } };
-}
-
-interface ApiEvent {
-    time?: { elapsed?: number | null; extra?: number | null } | null;
-    team?: { id?: number | null } | null;
-    player?: { name?: string | null } | null;
-    assist?: { name?: string | null } | null;
-    type?: string | null;
-    detail?: string | null;
-    comments?: string | null;
-}
-
-interface DraftEvent {
-    type: MatchEventType;
-    side: Side;
-    minute: number;
-    extraMinute: number | null;
-    playerName: string | null;
-    relatedPlayerName: string | null;
-    detail: string | null;
-    order: number;
 }
 
 /** Se agotó la cuota diaria de la API: no tiene sentido seguir pidiendo datos. */
@@ -55,7 +27,6 @@ class QuotaError extends Error { }
 const quota: { day: string | null } = { day: null };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const opposite = (side: Side): Side => (side === 'home' ? 'away' : 'home');
 
 async function apiGet<T>(path: string, attempt = 0): Promise<T[]> {
     const res = await fetch(`${API_BASE}${path}`, {
@@ -92,133 +63,6 @@ async function apiGet<T>(path: string, attempt = 0): Promise<T[]> {
     }
 
     return (data.response ?? []) as T[];
-}
-
-function isShootout(event: ApiEvent) {
-    return (event.comments ?? '').toLowerCase().includes('shootout');
-}
-
-function classify(event: ApiEvent): MatchEventType | null {
-    const type = (event.type ?? '').toLowerCase();
-    const detail = (event.detail ?? '').toLowerCase();
-
-    if (type === 'goal') {
-        if (detail.includes('own')) return 'OWN_GOAL';
-        if (detail.includes('missed')) return 'MISSED_PENALTY';
-        if (detail.includes('penalty')) return 'PENALTY_GOAL';
-        return 'GOAL';
-    }
-
-    if (type === 'card') {
-        if (detail.includes('second')) return 'SECOND_YELLOW';
-        if (detail.includes('red')) return 'RED_CARD';
-        if (detail.includes('yellow')) return 'YELLOW_CARD';
-        return null;
-    }
-
-    if (type === 'subst') return 'SUBSTITUTION';
-    if (type === 'var') return 'VAR';
-
-    return null;
-}
-
-function buildDrafts(events: ApiEvent[], homeApiId: number, awayApiId: number) {
-    const drafts: DraftEvent[] = [];
-    let skipped = 0;
-    let shootout = 0;
-
-    events.forEach((event, order) => {
-        if (isShootout(event)) {
-            shootout += 1;
-            return;
-        }
-
-        const type = classify(event);
-        const teamId = event.team?.id;
-        const side: Side | null =
-            teamId === homeApiId ? 'home' : teamId === awayApiId ? 'away' : null;
-
-        if (!type || !side) {
-            skipped += 1;
-            return;
-        }
-
-        const apiPlayer = event.player?.name ?? null;
-        const apiAssist = event.assist?.name ?? null;
-
-        let playerName = apiPlayer;
-        let relatedPlayerName = apiAssist;
-
-        // Normalizamos los cambios: playerName = quien entra, relatedPlayerName = quien sale
-        if (type === 'SUBSTITUTION') {
-            playerName = SUB_PLAYER_IS_OUT ? apiAssist : apiPlayer;
-            relatedPlayerName = SUB_PLAYER_IS_OUT ? apiPlayer : apiAssist;
-        }
-
-        drafts.push({
-            type,
-            side,
-            minute: event.time?.elapsed ?? 0,
-            extraMinute: event.time?.extra ?? null,
-            playerName,
-            relatedPlayerName,
-            detail: event.detail ?? null,
-            order,
-        });
-    });
-
-    drafts.sort(
-        (a, b) =>
-            a.minute - b.minute ||
-            (a.extraMinute ?? 0) - (b.extraMinute ?? 0) ||
-            a.order - b.order
-    );
-
-    return { drafts, skipped, shootout };
-}
-
-type OwnGoalMode = 'committer' | 'beneficiary';
-
-function creditedScore(drafts: DraftEvent[], mode: OwnGoalMode) {
-    const score = { home: 0, away: 0 };
-
-    for (const draft of drafts) {
-        if (draft.type === 'GOAL' || draft.type === 'PENALTY_GOAL') {
-            score[draft.side] += 1;
-        } else if (draft.type === 'OWN_GOAL') {
-            score[mode === 'committer' ? opposite(draft.side) : draft.side] += 1;
-        }
-    }
-
-    return score;
-}
-
-/**
- * No sabemos si en un gol en propia puerta la API indica el equipo del jugador o el que anota,
- * así que elegimos la interpretación que cuadra con el marcador final.
- * Tras esto, `side` de un OWN_GOAL es siempre el equipo al que se le acredita el gol.
- */
-function resolveOwnGoals(drafts: DraftEvent[], expected: { home: number; away: number }) {
-    const matchesExpected = (score: { home: number; away: number }) =>
-        score.home === expected.home && score.away === expected.away;
-
-    let mode: OwnGoalMode = 'committer';
-    if (
-        !matchesExpected(creditedScore(drafts, 'committer')) &&
-        matchesExpected(creditedScore(drafts, 'beneficiary'))
-    ) {
-        mode = 'beneficiary';
-    }
-
-    const resolved = drafts.map((draft) =>
-        draft.type === 'OWN_GOAL' && mode === 'committer'
-            ? { ...draft, side: opposite(draft.side) }
-            : draft
-    );
-
-    const derived = creditedScore(drafts, mode);
-
-    return { drafts: resolved, derived, consistent: matchesExpected(derived) };
 }
 
 /** Muestra cómo etiqueta la API los eventos de un partido, sin tocar la base de datos. */

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Calendar, MapPin, Sparkles, Trophy } from 'lucide-react';
+import { Calendar, MapPin, Sparkles, Trophy, UserCheck } from 'lucide-react';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
@@ -61,6 +61,16 @@ export default function MatchHeaderSection({ match, tagSummary, formattedDate }:
                         <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                         <span className="capitalize">{formattedDate}</span>
                     </div>
+                    {(match.homeHalfScore !== null || match.homePenalties !== null) && (
+                        <div className="flex flex-wrap justify-center gap-x-3 mt-1.5 text-[11px] font-medium text-slate-500">
+                            {match.homeHalfScore !== null && (
+                                <span>Descanso {match.homeHalfScore}-{match.awayHalfScore}</span>
+                            )}
+                            {match.homePenalties !== null && (
+                                <span className="font-bold text-amber-300">Penales {match.homePenalties}-{match.awayPenalties}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Visitante */}
@@ -84,6 +94,12 @@ export default function MatchHeaderSection({ match, tagSummary, formattedDate }:
                     <div className="flex items-center gap-1.5">
                         <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span>{match.stadium}</span>
+                    </div>
+                )}
+                {match.referee && (
+                    <div className="flex items-center gap-1.5">
+                        <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Árbitro: {match.referee}</span>
                     </div>
                 )}
                 <div className="flex flex-wrap gap-1.5">

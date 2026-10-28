@@ -1,0 +1,45 @@
+# Completa la base de datos con la cuota gratis de API-Football, un poco cada día.
+# Requiere dos secretos en GitHub (Settings → Secrets and variables → Actions):
+#   DATABASE_URL       cadena de conexión de Neon
+#   FOOTBALL_API_KEY   clave de API-Football
+name: Sync diario de datos
+
+on:
+  schedule:
+    # 00:30 UTC: media hora después de que se renueva la cuota diaria
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: 'Peticiones a gastar (máx. 100 al día en el plan gratis)'
+        default: '90'
+
+# Nunca dos corridas a la vez: gastarían la misma cuota
+concurrency:
+  group: daily-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Sincronizar
+        # El presupuesto llega por variable de entorno (no interpolado en el comando) para evitar inyección
+        run: npx prisma generate && npx tsx prisma/sync-daily.ts --budget="$BUDGET"
+        env:
+          BUDGET: ${{ inputs.budget || '90' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
