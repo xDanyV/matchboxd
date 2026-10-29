@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ChevronLeft, ChevronRight, Info, Search, SearchX, Trophy, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Search, SearchX, Trophy, User, X } from 'lucide-react';
+import Image from 'next/image';
+import { playerHref } from '@/lib/players';
 import MatchCard from '@/components/matches/MatchCard';
 import SearchFilters from '@/components/search/SearchFilters';
 import TeamCrest from '@/components/teams/TeamCrest';
@@ -10,6 +12,7 @@ import {
     getSearchDimensions,
     getStageOptions,
     searchMatches,
+    searchPlayers,
 } from '@/lib/search';
 import {
     STAGE_CATEGORIES,
@@ -113,7 +116,10 @@ async function SearchResults({ criteria }: { criteria: SearchCriteria }) {
 
     // Los equipos dependen solo del texto y se muestran en la primera página
     const teams = criteria.page === 1 ? findTeams(tokenize(criteria.q), dims, 8) : [];
-    const result = await searchMatches(criteria, dims);
+    const [result, players] = await Promise.all([
+        searchMatches(criteria, dims),
+        criteria.page === 1 && criteria.q ? searchPlayers(criteria.q, 8) : Promise.resolve([]),
+    ]);
 
     const hasFilters =
         criteria.season !== null ||
@@ -145,6 +151,41 @@ async function SearchResults({ criteria }: { criteria: SearchCriteria }) {
                                     {team.country && (
                                         <p className="truncate text-xs text-slate-500">{team.country}</p>
                                     )}
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Jugadores */}
+            {players.length > 0 && (
+                <section className="space-y-4">
+                    <h2 className="text-lg font-black text-white tracking-tight">
+                        Jugadores <span className="text-slate-500 font-bold">({players.length})</span>
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {players.map((player) => (
+                            <Link
+                                key={player.id}
+                                href={playerHref(player.id)}
+                                className="group flex items-center gap-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-emerald-500/40 p-4 transition-all"
+                            >
+                                <span className="relative w-11 h-11 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
+                                    {player.photoUrl ? (
+                                        <Image src={player.photoUrl} alt="" fill sizes="44px" className="object-cover" />
+                                    ) : (
+                                        <User className="w-5 h-5 text-slate-500 absolute inset-0 m-auto" />
+                                    )}
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="truncate font-black text-white group-hover:text-emerald-400 transition-colors">
+                                        {player.name}
+                                    </p>
+                                    <p className="truncate text-xs text-slate-500">
+                                        {[player.teamName, player.appearances > 0 ? `${player.appearances} PJ` : null].filter(Boolean).join(' · ')}
+                                    </p>
                                 </div>
                             </Link>
                         ))}

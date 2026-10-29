@@ -9,6 +9,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
     } catch (error) {
         console.error('[search/suggest]', error);
-        return NextResponse.json({ teams: [], matches: [] }, { status: 500 });
+        return NextResponse.json({ teams: [], players: [], matches: [] }, { status: 500 });
     }
 }

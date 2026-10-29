@@ -10,6 +10,8 @@ import { normalizePlayerStats, normalizeTeamStats } from '../src/lib/match-stats
  *   1. Por temporada (una sola vez): todos los partidos, datos de equipos y tabla.
  *   2. Con lo que quede del presupuesto: detalle completo de cada partido (1 petición por
  *      partido): eventos, alineaciones, estadísticas de equipo y de cada jugador.
+ *   3. Cuando ya no quedan partidos: la trayectoria de cada jugador (1 petición por jugador),
+ *      empezando por los que más partidos tienen.
  *
  * Uso:
  *   npm run sync:daily                     -> gasta hasta 90 peticiones
@@ -112,7 +114,7 @@ const playerId = (apiId: number) => `api-player-${apiId}`;
 
 const POSITION_NAMES: Record<string, string> = { G: 'Goalkeeper', D: 'Defender', M: 'Midfielder', F: 'Attacker' };
 
-const summary = { matchesCreated: 0, matchesUpdated: 0, details: 0, warnings: [] as string[] };
+const summary = { matchesCreated: 0, matchesUpdated: 0, details: 0, careers: 0, warnings: [] as string[] };
 
 function warn(message: string) {
     summary.warnings.push(message);
@@ -463,6 +465,57 @@ async function syncMatchDetails(api: ApiClient) {
 }
 
 // -------------------------------------------------------------
+// Fase 3: trayectoria de los jugadores
+// -------------------------------------------------------------
+
+interface ApiPlayerTeams {
+    team: { id: number; name: string; logo?: string | null };
+    seasons: number[];
+}
+
+async function syncCareers(api: ApiClient) {
+    // Solo jugadores que aparecen en partidos: los que tienen página con contenido
+    const pending = await prisma.player.findMany({
+        where: { careerSyncedAt: null, matchStats: { some: {} } },
+        orderBy: { matchStats: { _count: 'desc' } },
+        select: { id: true, name: true },
+    });
+
+    if (pending.length === 0) {
+        console.log('\n✔ Todas las trayectorias de jugadores están descargadas.');
+        return;
+    }
+
+    console.log(`\n🧭 Trayectorias de jugadores: ${pending.length} pendiente(s)`);
+
+    for (const player of pending) {
+        const apiId = Number(player.id.replace('api-player-', ''));
+        if (!Number.isInteger(apiId)) {
+            await prisma.player.update({ where: { id: player.id }, data: { careerSyncedAt: new Date() } });
+            continue;
+        }
+
+        const entries = await api.get<ApiPlayerTeams>(`/players/teams?player=${apiId}`);
+        const rows = entries.map((entry, index) => ({
+            playerId: player.id,
+            teamApiId: entry.team.id,
+            teamName: entry.team.name,
+            teamLogo: entry.team.logo ?? null,
+            seasons: [...(entry.seasons ?? [])].sort((a, b) => b - a),
+            sortOrder: index,
+        }));
+
+        await prisma.$transaction([
+            prisma.playerCareerTeam.deleteMany({ where: { playerId: player.id } }),
+            prisma.playerCareerTeam.createMany({ data: rows, skipDuplicates: true }),
+            prisma.player.update({ where: { id: player.id }, data: { careerSyncedAt: new Date() } }),
+        ]);
+        summary.careers += 1;
+        console.log(`  ✔ ${player.name}: ${rows.length} equipo(s)`);
+    }
+}
+
+// -------------------------------------------------------------
 
 async function main() {
     const apiKey = process.env.FOOTBALL_API_KEY;
@@ -484,6 +537,7 @@ async function main() {
     try {
         await syncSeasonData(api, competition.id);
         await syncMatchDetails(api);
+        await syncCareers(api);
     } catch (error) {
         if (error instanceof BudgetError || error instanceof QuotaError) {
             stoppedBy = error.message;
@@ -494,13 +548,17 @@ async function main() {
 
     const pendingDetails = await prisma.match.count({ where: { apiId: { not: null }, detailsSyncedAt: null } });
     const totalMatches = await prisma.match.count();
+    const pendingCareers = await prisma.player.count({ where: { careerSyncedAt: null, matchStats: { some: {} } } });
 
     console.log('\n──────── Resumen ────────');
     console.log(`Peticiones usadas: ${api.used}${api.remainingToday !== null ? ` · quedan hoy: ${api.remainingToday}` : ''}`);
     console.log(`Partidos nuevos: ${summary.matchesCreated} · actualizados: ${summary.matchesUpdated} · con detalle nuevo: ${summary.details}`);
     console.log(`Partidos en total: ${totalMatches} · pendientes de detalle: ${pendingDetails}`);
-    if (pendingDetails > 0) {
-        console.log(`A este ritmo faltan ≈ ${Math.ceil(pendingDetails / BUDGET)} día(s).`);
+    console.log(`Trayectorias nuevas: ${summary.careers} · pendientes: ${pendingCareers}`);
+    // Se estima con el presupuesto diario normal, no con el de esta corrida (que puede ser una prueba)
+    const pendingRequests = pendingDetails + pendingCareers;
+    if (pendingRequests > 0) {
+        console.log(`Con ${DEFAULT_BUDGET} peticiones al día faltan ≈ ${Math.ceil(pendingRequests / DEFAULT_BUDGET)} día(s).`);
     }
     if (stoppedBy) console.log(`⏸️  Se detuvo: ${stoppedBy} El avance ya está guardado.`);
     if (summary.warnings.length > 0) console.log(`⚠️  Avisos: ${summary.warnings.length}`);

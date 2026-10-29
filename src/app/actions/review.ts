@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sanitizeReviewTags } from '@/lib/review-tags';
 import { isValidRating } from '@/lib/rating';
+import { REVIEW_CONTENT_MAX_LENGTH, REVIEW_TITLE_MAX_LENGTH } from '@/lib/review-limits';
 import { parseMatchLogInput, type MatchLogInput } from '@/lib/diary';
 import { BLOCKED_CONTENT_MESSAGE, checkContent } from '@/lib/content-filter';
 import { checkRateLimit, clearAutomaticFlags, flagAutomatically } from '@/lib/auto-moderation';
@@ -41,6 +42,13 @@ export async function submitReview(data: SubmitReviewInput): Promise<SubmitRevie
     const content = data.content?.trim() || null;
     // Un título sin texto no tiene sentido: se descarta
     const title = content ? data.title?.trim() || null : null;
+
+    if (content && content.length > REVIEW_CONTENT_MAX_LENGTH) {
+        return { success: false, error: `La reseña no puede superar ${REVIEW_CONTENT_MAX_LENGTH.toLocaleString('es-MX')} caracteres.` };
+    }
+    if (title && title.length > REVIEW_TITLE_MAX_LENGTH) {
+        return { success: false, error: `El título no puede superar ${REVIEW_TITLE_MAX_LENGTH} caracteres.` };
+    }
     const hasSpoilers = content ? data.hasSpoilers || false : false;
 
     const filter = checkContent(title, content);

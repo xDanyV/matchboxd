@@ -12,7 +12,10 @@
     "seed": "tsx --env-file=.env prisma/seed.ts",
     "backfill:logs": "tsx --env-file=.env prisma/backfill-logs.ts",
     "set-role": "tsx --env-file=.env prisma/set-role.ts",
-    "sync:daily": "tsx --env-file=.env prisma/sync-daily.ts"
+    "sync:daily": "tsx --env-file=.env prisma/sync-daily.ts",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:status": "prisma migrate status"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

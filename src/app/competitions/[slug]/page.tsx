@@ -6,6 +6,8 @@ import { Calendar, Goal, Handshake, ListOrdered, Square } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { getSeasonLeaders, type LeaderCategory } from '@/lib/season-leaders';
 import { playerHref } from '@/lib/players';
+import { KNOCKOUT_ROUNDS, buildBracket } from '@/lib/knockout';
+import KnockoutBracket from '@/components/competitions/KnockoutBracket';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 
@@ -79,7 +81,7 @@ export default async function CompetitionPage({ params, searchParams }: Competit
     const seasons = competition.seasons.map((s) => s.season);
     const season = requestedSeason && seasons.includes(requestedSeason) ? requestedSeason : seasons[0];
 
-    const [standings, leaderData] = season
+    const [standings, leaderData, knockoutMatches] = season
         ? await Promise.all([
             prisma.standing.findMany({
                 where: { competitionId: competition.id, season },
@@ -87,8 +89,17 @@ export default async function CompetitionPage({ params, searchParams }: Competit
                 orderBy: [{ groupName: 'asc' }, { rank: 'asc' }],
             }),
             getSeasonLeaders(competition.id, season),
+            prisma.match.findMany({
+                where: { competitionId: competition.id, season, stage: { in: KNOCKOUT_ROUNDS.map((r) => r.stage) } },
+                select: {
+                    id: true, date: true, stage: true, homeScore: true, awayScore: true, homePenalties: true, awayPenalties: true,
+                    homeTeam: { select: { id: true, name: true, shortName: true, slug: true, crestUrl: true } },
+                    awayTeam: { select: { id: true, name: true, shortName: true, slug: true, crestUrl: true } },
+                },
+            }),
         ])
-        : [[], null];
+        : [[], null, []];
+    const bracket = buildBracket(knockoutMatches);
 
     const groups = new Map<string, typeof standings>();
     for (const row of standings) groups.set(row.groupName, [...(groups.get(row.groupName) ?? []), row]);
@@ -138,8 +149,14 @@ export default async function CompetitionPage({ params, searchParams }: Competit
                     <section className="space-y-4">
                         <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
                             <ListOrdered className="w-5 h-5 text-emerald-400" />
-                            {groups.size > 1 ? 'Fase de grupos' : 'Tabla'}
+                            {groups.size > 1 ? 'Fase de grupos' : 'Fase de liga'}
                         </h2>
+                        {/* El formato cambió en 2024-25: conviene explicarlo para que las temporadas no parezcan inconsistentes */}
+                        <p className="text-sm text-slate-400 leading-relaxed max-w-3xl">
+                            {groups.size > 1
+                                ? 'Hasta 2023-24 la Champions se jugaba en 8 grupos de 4 equipos: los dos primeros pasaban a octavos y el tercero bajaba a la Europa League.'
+                                : 'Desde 2024-25 la Champions usa una sola tabla de 36 equipos: cada uno juega 8 partidos contra rivales distintos. Del 1.º al 8.º pasan directo a octavos, del 9.º al 24.º juegan un playoff y el resto queda eliminado.'}
+                        </p>
 
                         <div className={groups.size > 1 ? 'grid gap-4 lg:grid-cols-2' : ''}>
                             {[...groups.entries()].map(([groupName, rows]) => (
@@ -220,6 +237,8 @@ export default async function CompetitionPage({ params, searchParams }: Competit
                             </ul>
                         )}
                     </section>
+
+                    <KnockoutBracket rounds={bracket} />
 
                     {/* Goleadores y tarjetas */}
                     <section className="space-y-4">

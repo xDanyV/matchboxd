@@ -9,6 +9,7 @@ import type { WatchMethod } from '@prisma/client';
 import { submitReview } from '@/app/actions/review';
 import ReviewTagPicker from '@/components/reviews/ReviewTagPicker';
 import HalfStarRating from '@/components/matches/HalfStarRating';
+import { REVIEW_CONTENT_MAX_LENGTH, REVIEW_TITLE_MAX_LENGTH } from '@/lib/review-limits';
 import { sanitizeReviewTags, type ReviewTagSlug } from '@/lib/review-tags';
 import { WATCH_METHODS, toDateInputValue } from '@/lib/watch-methods';
 
@@ -334,6 +335,7 @@ export default function ReviewModal({
                         <input
                             type="text"
                             placeholder="Ej. Una exhibición táctica memorable..."
+                            maxLength={REVIEW_TITLE_MAX_LENGTH}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
@@ -347,13 +349,17 @@ export default function ReviewModal({
                         </label>
                         <textarea
                             rows={4}
+                            maxLength={REVIEW_CONTENT_MAX_LENGTH}
                             placeholder="Escribe tus observaciones del partido, rendimiento de los equipos, momentos clave..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             className="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
                         />
-                        <p className="text-[11px] text-slate-500">
-                            Si lo dejas vacío, solo se guarda tu calificación.
+                        <p className="flex justify-between gap-3 text-[11px] text-slate-500">
+                            <span>Si lo dejas vacío, solo se guarda tu calificación.</span>
+                            <span className="tabular-nums shrink-0">
+                                {content.length.toLocaleString('es-MX')}/{REVIEW_CONTENT_MAX_LENGTH.toLocaleString('es-MX')}
+                            </span>
                         </p>
                     </div>
 

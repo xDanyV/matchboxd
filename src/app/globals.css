@@ -12,3 +12,91 @@ body {
   color: #f8fafc;
   min-height: 100svh;
 }
+/* ------------------------------ Landing ------------------------------ */
+/* Papelería del archivo: carpetas, talones, recibo y hoja impresa */
+
+:root {
+  --paper: #efeadf;
+  --paper-2: #e2dccd;
+  --ink: #0b1220;
+  --ink-soft: #3b4556;
+  --accent-ink: #047857;
+}
+
+.lp-folder-tab {
+  clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+}
+
+/* Borde de recibo en zigzag */
+.lp-zigzag {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px),
+      95% 100%, 90% calc(100% - 12px), 85% 100%, 80% calc(100% - 12px), 75% 100%, 70% calc(100% - 12px),
+      65% 100%, 60% calc(100% - 12px), 55% 100%, 50% calc(100% - 12px), 45% 100%, 40% calc(100% - 12px),
+      35% 100%, 30% calc(100% - 12px), 25% 100%, 20% calc(100% - 12px), 15% 100%, 10% calc(100% - 12px),
+      5% 100%, 0 calc(100% - 12px));
+}
+
+/* Puntos guía entre concepto y valor */
+.lp-leader {
+  flex: 1;
+  min-width: 1.5rem;
+  border-bottom: 4px dotted currentColor;
+  opacity: 0.35;
+  transform: translateY(-0.35em);
+}
+
+/* Perforación de hoja impresa (puntos redondos de 6px) */
+.lp-perforated {
+  border-top: 6px dotted var(--ink);
+}
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lp-drift {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.12) translate(-2%, -1%);
+  }
+}
+
+/* Entrada al cargar: las carpetas suben una tras otra */
+.lp-load>* {
+  animation: lp-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+/* Entrada al hacer scroll, escalonada por hijo (sin JS; si el navegador no
+   soporta animation-timeline, el contenido simplemente aparece) */
+@supports (animation-timeline: view()) {
+  .lp-reveal>* {
+    animation: lp-rise linear both;
+    animation-timeline: view();
+    animation-range: entry calc(var(--i, 0) * 7%) entry calc(55% + var(--i, 0) * 7%);
+  }
+}
+
+.lp-drift {
+  animation: lp-drift 18s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .lp-load>*,
+  .lp-reveal>*,
+  .lp-drift {
+    animation: none !important;
+  }
+}

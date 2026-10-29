@@ -14,6 +14,7 @@ import { teamSearchText } from '@/lib/team-aliases';
 export const PAGE_SIZE = 8;
 const SUGGEST_TEAMS_LIMIT = 4;
 const SUGGEST_MATCHES_LIMIT = 5;
+const SUGGEST_PLAYERS_LIMIT = 4;
 
 const matchInclude = {
     homeTeam: true,
@@ -304,17 +305,81 @@ export async function searchMatches(
     };
 }
 
+
+// -------------------------------------------------------------
+// Jugadores
+// -------------------------------------------------------------
+
+export interface SearchPlayer {
+    id: string;
+    name: string;
+    photoUrl: string | null;
+    position: string | null;
+    teamName: string | null;
+    teamCrestUrl: string | null;
+    appearances: number;
+}
+
+// Letras con acento -> sin acento, para comparar en SQL sin instalar la extensión unaccent.
+// "mbappe" encuentra a "Mbappé" y "muller" a "Müller".
+const ACCENTS: Record<string, string> = {
+    á: 'a', à: 'a', ä: 'a', â: 'a', ã: 'a', å: 'a', ā: 'a', ą: 'a',
+    é: 'e', è: 'e', ë: 'e', ê: 'e', ē: 'e', ę: 'e', ě: 'e',
+    í: 'i', ì: 'i', ï: 'i', î: 'i', ī: 'i', ı: 'i',
+    ó: 'o', ò: 'o', ö: 'o', ô: 'o', õ: 'o', ø: 'o', ō: 'o', ő: 'o',
+    ú: 'u', ù: 'u', ü: 'u', û: 'u', ū: 'u', ů: 'u', ű: 'u',
+    ñ: 'n', ń: 'n', ň: 'n', ç: 'c', ć: 'c', č: 'c', š: 's', ś: 's', ş: 's',
+    ž: 'z', ź: 'z', ż: 'z', đ: 'd', ď: 'd', ł: 'l', ğ: 'g', ř: 'r', ý: 'y', ť: 't',
+};
+const ACCENTS_FROM = Object.keys(ACCENTS).join('');
+const ACCENTS_TO = Object.values(ACCENTS).join('');
+
+/** Busca jugadores por nombre (sin importar acentos). Primero los que más partidos tienen registrados. */
+export async function searchPlayers(rawQuery: string, limit: number): Promise<SearchPlayer[]> {
+    const tokens = tokenize(rawQuery.slice(0, 60)).filter((token) => token.length >= 2);
+    if (tokens.length === 0) return [];
+
+    // Cada palabra tiene que aparecer en el nombre; los comodines de LIKE se escapan
+    const conditions = tokens.map((token) => {
+        const pattern = `%${token.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+        return Prisma.sql`translate(lower(p."name"), ${ACCENTS_FROM}, ${ACCENTS_TO}) LIKE ${pattern}`;
+    });
+
+    // Club: el de la plantilla actual o, si no está en ninguna, el último con el que jugó en nuestros datos
+    return prisma.$queryRaw<SearchPlayer[]>`
+        SELECT p."id", p."name", p."photoUrl", p."position",
+               COALESCE(t."name", lt."name") AS "teamName",
+               COALESCE(t."crestUrl", lt."crestUrl") AS "teamCrestUrl",
+               (SELECT COUNT(*) FROM "match_players" mp WHERE mp."playerId" = p."id")::int AS "appearances"
+        FROM "players" p
+        LEFT JOIN "teams" t ON t."id" = p."teamId"
+        LEFT JOIN LATERAL (
+            SELECT tm."name", tm."crestUrl"
+            FROM "match_players" mp
+            JOIN "matches" m ON m."id" = mp."matchId"
+            JOIN "teams" tm ON tm."id" = mp."teamId"
+            WHERE mp."playerId" = p."id"
+            ORDER BY m."date" DESC
+            LIMIT 1
+        ) lt ON TRUE
+        WHERE ${Prisma.join(conditions, ' AND ')}
+        ORDER BY "appearances" DESC, p."name" ASC
+        LIMIT ${limit}
+    `;
+}
+
 /** Sugerencias rápidas para el buscador del navbar (solo datos públicos). */
 export async function searchSuggestions(rawQuery: string): Promise<SuggestionsPayload> {
     const query = rawQuery.trim().slice(0, 60);
     const tokens = tokenize(query);
 
-    if (query.length < 2 || tokens.length === 0) return { teams: [], matches: [] };
+    if (query.length < 2 || tokens.length === 0) return { teams: [], players: [], matches: [] };
 
     const dims = await getSearchDimensions();
     const teams = findTeams(tokens, dims, SUGGEST_TEAMS_LIMIT);
 
-    const matches = await prisma.match.findMany({
+    const [matches, players] = await Promise.all([
+        prisma.match.findMany({
         where: { AND: buildTextConditions(tokens, dims) },
         orderBy: { date: 'desc' },
         take: SUGGEST_MATCHES_LIMIT,
@@ -327,7 +392,9 @@ export async function searchSuggestions(rawQuery: string): Promise<SuggestionsPa
             homeTeam: { select: { name: true, crestUrl: true } },
             awayTeam: { select: { name: true, crestUrl: true } },
         },
-    });
+        }),
+        searchPlayers(query, SUGGEST_PLAYERS_LIMIT),
+    ]);
 
     return {
         teams: teams.map((team) => ({
@@ -336,6 +403,12 @@ export async function searchSuggestions(rawQuery: string): Promise<SuggestionsPa
             slug: team.slug,
             crestUrl: team.crestUrl,
             country: team.country,
+        })),
+        players: players.map((player) => ({
+            id: player.id,
+            name: player.name,
+            photoUrl: player.photoUrl,
+            teamName: player.teamName,
         })),
         matches,
     };
