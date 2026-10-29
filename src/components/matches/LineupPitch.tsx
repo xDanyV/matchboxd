@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Shirt } from 'lucide-react';
+import { playerHref } from '@/lib/players';
 import TeamCrest from '@/components/teams/TeamCrest';
 import RatingBadge from '@/components/matches/RatingBadge';
 
@@ -84,7 +86,7 @@ function placePlayers(players: PitchPlayer[], side: 'home' | 'away') {
 
 function PlayerMarker({ player, shirt, number }: { player: PitchPlayer; shirt: string; number: string }) {
     return (
-        <div className="flex flex-col items-center gap-0.5 w-16 sm:w-20">
+        <Link href={playerHref(player.id)} title={player.name} className="group flex flex-col items-center gap-0.5 w-16 sm:w-20">
             <div className="relative">
                 <div
                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white/80 shadow-md flex items-center justify-center text-[11px] sm:text-xs font-black"
@@ -99,10 +101,10 @@ function PlayerMarker({ player, shirt, number }: { player: PitchPlayer; shirt: s
                 )}
                 <RatingBadge rating={player.rating} className="absolute -top-1.5 -right-4" />
             </div>
-            <span className="max-w-full truncate rounded px-1 bg-slate-950/70 text-[10px] sm:text-[11px] font-semibold text-white leading-tight">
+            <span className="max-w-full truncate rounded px-1 bg-slate-950/70 text-[10px] sm:text-[11px] font-semibold text-white leading-tight group-hover:text-emerald-300">
                 {shortName(player.name)}
             </span>
-        </div>
+        </Link>
     );
 }
 
@@ -136,7 +138,7 @@ function Bench({ lineup, title }: { lineup: TeamLineupData; title: string }) {
                     return (
                         <li key={p.id} className={`flex items-center gap-2 text-xs ${played ? 'text-slate-200' : 'text-slate-500'}`}>
                             <span className="w-5 text-right font-mono text-slate-500">{p.number ?? ''}</span>
-                            <span className="flex-1 truncate">{p.name}</span>
+                            <Link href={playerHref(p.id)} className="flex-1 truncate hover:text-emerald-400 transition-colors">{p.name}</Link>
                             {played && <span className="text-[10px] text-slate-500 font-mono">{p.minutes}&apos;</span>}
                             <RatingBadge rating={p.rating} />
                         </li>

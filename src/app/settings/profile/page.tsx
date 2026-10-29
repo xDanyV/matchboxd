@@ -6,6 +6,7 @@ import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { ensureUsername } from '@/lib/username';
 import ProfileForm from '@/components/profile/ProfileForm';
+import AccountDataSection from '@/components/profile/AccountDataSection';
 
 export default async function ProfileSettingsPage() {
     const session = await getSession();
@@ -54,6 +55,8 @@ export default async function ProfileSettingsPage() {
                     teams={teams}
                 />
             </div>
+
+            <AccountDataSection username={username} />
         </div>
     );
 }

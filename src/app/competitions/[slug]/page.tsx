@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Calendar, Goal, Handshake, ListOrdered, Square } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { getSeasonLeaders, type LeaderCategory } from '@/lib/season-leaders';
+import { playerHref } from '@/lib/players';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 
@@ -233,7 +234,7 @@ export default async function CompetitionPage({ params, searchParams }: Competit
                                     <li key={leader.player.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-800/60 last:border-0">
                                         <span className="w-4 text-[11px] font-bold text-slate-500 tabular-nums">{leader.rank}</span>
                                         <TeamCrest name={leader.team?.name ?? leader.player.name} crestUrl={leader.team?.crestUrl ?? null} size={20} />
-                                        <span className="flex-1 min-w-0 truncate text-sm font-semibold text-slate-100">{leader.player.name}</span>
+                                        <Link href={playerHref(leader.player.id)} className="flex-1 min-w-0 truncate text-sm font-semibold text-slate-100 hover:text-emerald-400 transition-colors">{leader.player.name}</Link>
                                         <span className="text-[10px] text-slate-500 hidden sm:inline">{leader.played} PJ</span>
                                         <span className="text-sm font-black text-white tabular-nums">{leader.value}</span>
                                     </li>

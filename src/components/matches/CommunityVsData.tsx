@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { playerHref } from '@/lib/players';
 import { BarChart3, Equal, Sparkles, Users } from 'lucide-react';
 import RatingBadge from '@/components/matches/RatingBadge';
 
@@ -38,7 +40,7 @@ export default function CommunityVsData({ communityMvp, topRated }: CommunityVsD
                         <>
                             <p className="text-base font-black text-white flex items-center gap-1.5">
                                 <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                                <span className="truncate">{communityMvp.name}</span>
+                                <Link href={playerHref(communityMvp.id)} className="truncate hover:text-emerald-400 transition-colors">{communityMvp.name}</Link>
                             </p>
                             <p className="text-xs text-slate-400">
                                 {communityMvp.percent}% de los votos ({communityMvp.votes})
@@ -55,7 +57,7 @@ export default function CommunityVsData({ communityMvp, topRated }: CommunityVsD
                         Mejor nota según los datos
                     </p>
                     <p className="text-base font-black text-white flex items-center gap-2">
-                        <span className="truncate">{topRated.name}</span>
+                        <Link href={playerHref(topRated.id)} className="truncate hover:text-emerald-400 transition-colors">{topRated.name}</Link>
                         <RatingBadge rating={topRated.rating} />
                     </p>
                     <p className="text-xs text-slate-400">{topRated.teamName}</p>

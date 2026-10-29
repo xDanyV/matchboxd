@@ -1,11 +1,12 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import { generateUniqueUsername } from '@/lib/username';
+import { createAuthAdapter } from '@/lib/auth-adapter';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-    adapter: PrismaAdapter(prisma),
+    // Igual que el adaptador de Prisma, pero sin guardar los tokens de Google
+    adapter: createAuthAdapter(prisma),
     providers: [
         Google({
             clientId: process.env.AUTH_GOOGLE_ID,

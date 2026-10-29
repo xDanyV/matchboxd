@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { playerHref } from '@/lib/players';
 import { Users } from 'lucide-react';
 import TeamCrest from '@/components/teams/TeamCrest';
 import RatingBadge from '@/components/matches/RatingBadge';
@@ -100,7 +102,7 @@ export default function PlayerStatsTable({ home, away }: { home: TeamRows; away:
                                 <td className="sticky left-0 z-10 bg-slate-900 py-2 pr-3">
                                     <span className="flex items-center gap-2 max-w-[11rem]">
                                         <span className="w-4 shrink-0 text-[10px] font-bold text-slate-500">{p.position ?? ''}</span>
-                                        <span className={`truncate font-semibold ${p.isStarter ? 'text-white' : 'text-slate-300'}`}>{p.name}</span>
+                                        <Link href={playerHref(p.id)} className={`truncate font-semibold hover:text-emerald-400 transition-colors ${p.isStarter ? 'text-white' : 'text-slate-300'}`}>{p.name}</Link>
                                     </span>
                                 </td>
                                 <td className="py-2 px-2 text-center"><RatingBadge rating={p.rating} /></td>
