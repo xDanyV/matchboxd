@@ -26,6 +26,8 @@ For now it focuses on the **UEFA Champions League**, with match data coming from
 - **Share cards**: dynamic Open Graph images for matches (no score, so links never spoil the result) and profiles. The share button uses the native share menu and falls back to copying the link.
 - **Moderation**: users can delete their own reviews and comments (and comments on their reviews), and report other people's content (spam, offensive, unmarked spoiler, other). Admins review reports grouped by content at `/admin/reports` and can dismiss them or delete the content.
 - **Automatic moderation**: a language filter (`src/lib/content-filter.ts`) checks reviews, comments, usernames and bios. Slurs and threats are blocked; common swear words are published but sent to the moderation queue as automatic reports. It normalizes accents, case, leetspeak (`p3nd3j0`), repeated letters and separators (`p.u.t.a`), and matches whole words only. Users are also rate-limited (5 comments per minute, 10 ratings per minute, 10 reports per 10 minutes).
+- **Player pages** (`/players/[id]`) with photo, position and current club, totals (matches, minutes, goals, assists, average API rating, community MVP votes), a per-season breakdown, best performances and the full match history. Players link to them from line-ups, stats tables, MVP lists, leaderboards and squads.
+- **Privacy and account control**: users can download all their data as JSON and delete their account (everything they created is removed) from the profile settings. Privacy policy (`/privacidad`) and terms of use (`/terminos`) pages, linked from the footer and the login page.
 - **Team pages** (`/teams/[slug]`) with crest, country, founding year, venue, current squad, best rated matches and match history. Team crests link to them across the whole app.
 - **Global search**: press `/` or `Ctrl+K` for quick suggestions, or use `/search` to filter by season, stage and rating range.
 
@@ -178,6 +180,14 @@ src/
   auth.ts                  Auth.js configuration
 ```
 
+## Security
+
+- Sign-in only through Google: no passwords are stored, and the Google OAuth tokens are discarded when the account is linked (`src/lib/auth-adapter.ts`). Only the provider and account id are kept.
+- Database sessions in `HttpOnly` cookies; `/api/auth/session` only exposes the fields the app uses.
+- Every server action takes the user from the server session and checks ownership or the admin role on each request.
+- Security headers in `next.config.ts`: Content-Security-Policy (no external scripts, no framing, forms only to the app and Google), `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and HSTS.
+- Login redirects only accept internal paths (no open redirects).
+
 ## Known limitations
 
 - The squad shown on team pages is the **current** squad, which can differ from the squads of historical matches. Matches without synced details still use the current squads as MVP candidates.
@@ -186,7 +196,7 @@ src/
 
 ## Roadmap
 
-- Player pages and a teams index.
+- A teams index.
 - Custom lists ("Best finals", "Impossible comebacks").
 - Following other users and an activity feed.
 - Baseline database migration.

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { playerHref } from '@/lib/players';
 import { Users, User, LayoutGrid, List, ChevronDown } from 'lucide-react';
 
 interface Player {
@@ -129,8 +131,9 @@ export default function TeamSquadSection({ squadGroups }: TeamSquadSectionProps)
                     ) : viewMode === 'grid' ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
                             {filteredPlayers.map((player) => (
-                                <div
+                                <Link
                                     key={player.id}
+                                    href={playerHref(player.id)}
                                     className="bg-slate-950/60 hover:bg-slate-950 border border-slate-800/80 hover:border-emerald-500/30 rounded-2xl p-3.5 flex flex-col items-center text-center space-y-2.5 transition-all duration-200 shadow-sm group"
                                 >
                                     <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-800 border-2 border-slate-700/80 group-hover:border-emerald-500/50 transition-colors flex items-center justify-center shrink-0">
@@ -154,13 +157,13 @@ export default function TeamSquadSection({ squadGroups }: TeamSquadSectionProps)
                                             {player.position === 'Goalkeeper' ? 'Portero' : player.position === 'Defender' ? 'Defensa' : player.position === 'Midfielder' ? 'Mediocampista' : 'Delantero'}
                                         </p>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                             {filteredPlayers.map((player) => (
-                                <div key={player.id} className="flex items-center gap-3 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-2.5">
+                                <Link key={player.id} href={playerHref(player.id)} className="flex items-center gap-3 bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/30 rounded-2xl p-2.5 transition-colors">
                                     {player.photoUrl ? (
                                         <Image src={player.photoUrl} alt={player.name} width={38} height={38} className="w-9.5 h-9.5 rounded-full object-cover bg-slate-800 border border-slate-700 shrink-0" />
                                     ) : (
@@ -176,7 +179,7 @@ export default function TeamSquadSection({ squadGroups }: TeamSquadSectionProps)
                                             <span className="capitalize">{player.position || 'Jugador'}</span>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )}

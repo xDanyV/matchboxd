@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import Link from 'next/link';
+import { playerHref } from '@/lib/players';
 import { Star, Sparkles, User } from 'lucide-react';
 import RateButton from '@/components/matches/RateButton';
 import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
@@ -106,7 +108,7 @@ export default function MatchRatingMvpSection({
                                                     <User className="w-4 h-4" />
                                                 </div>
                                             )}
-                                            <span className="text-slate-200 truncate">{item.player.name}</span>
+                                            <Link href={playerHref(item.player.id)} className="text-slate-200 truncate hover:text-emerald-400 transition-colors">{item.player.name}</Link>
                                         </div>
                                         <span className="text-emerald-400 font-bold font-mono shrink-0 ml-2">
                                             {percentage}% ({item.count})

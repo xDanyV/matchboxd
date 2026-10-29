@@ -148,7 +148,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     </ul>
 
                     <p className="text-xs text-slate-500 leading-relaxed">
-                        Solo usamos tu nombre, foto y correo de Google para crear tu perfil. Nunca publicamos tu correo.{' '}
+                        Al continuar aceptas los{' '}
+                        <Link href="/terminos" className="text-slate-400 underline underline-offset-2 hover:text-white">términos de uso</Link>{' '}
+                        y la{' '}
+                        <Link href="/privacidad" className="text-slate-400 underline underline-offset-2 hover:text-white">política de privacidad</Link>.
+                        Solo usamos tu nombre, foto y correo de Google para crear tu perfil, y nunca publicamos tu correo.{' '}
                         <Link href="/" className="text-slate-400 underline underline-offset-2 hover:text-white">
                             Seguir explorando sin cuenta
                         </Link>

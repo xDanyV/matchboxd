@@ -57,6 +57,17 @@ export default function Footer() {
                 </div>
 
             </div>
+
+            {/* Enlaces legales */}
+            <nav aria-label="Información legal" className="max-w-5xl mx-auto mt-5 pt-4 border-t border-slate-800/60 flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2 text-xs">
+                <Link href="/privacidad" className="text-slate-500 hover:text-slate-200 transition-colors">
+                    Privacidad
+                </Link>
+                <Link href="/terminos" className="text-slate-500 hover:text-slate-200 transition-colors">
+                    Términos de uso
+                </Link>
+                <span className="text-slate-600">Proyecto independiente, sin afiliación con la UEFA.</span>
+            </nav>
         </motion.footer>
     );
 }
