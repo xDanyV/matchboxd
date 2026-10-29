@@ -54,6 +54,12 @@ export interface SuggestionsPayload {
         crestUrl: string | null;
         country: string | null;
     }[];
+    players: {
+        id: string;
+        name: string;
+        photoUrl: string | null;
+        teamName: string | null;
+    }[];
     matches: {
         id: string;
         season: string;

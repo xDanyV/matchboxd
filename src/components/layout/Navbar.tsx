@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut, User, Home, ShieldCheck } from 'lucide-react';
+import { Trophy, Flame, Bookmark, MessageSquare, LogIn, LogOut, User, Home, Shield, ShieldCheck } from 'lucide-react';
 import { signOut } from '@/auth';
 import { getSession } from '@/lib/session';
 import GlobalSearch from '@/components/search/GlobalSearch';
@@ -38,6 +38,14 @@ export default async function Navbar() {
                             >
                                 <Flame className="w-4.5 h-4.5 text-amber-400 shrink-0 fill-amber-400/20" />
                                 <span>Top Partidos</span>
+                            </Link>
+
+                            <Link
+                                href="/teams"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-emerald-400 hover:bg-slate-900/70 transition-all"
+                            >
+                                <Shield className="w-4.5 h-4.5 text-slate-400 shrink-0" />
+                                <span>Equipos</span>
                             </Link>
 
                             <Link

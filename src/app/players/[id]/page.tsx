@@ -9,11 +9,13 @@ import type { PlayerMatchStats } from '@/lib/match-stats';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 import RatingBadge from '@/components/matches/RatingBadge';
+import PlayerCareerTab, { type CareerEntry, type DataCoverage, type MatchboxSeason } from '@/components/players/PlayerCareerTab';
 
 export const revalidate = 0;
 
 interface PlayerPageProps {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ tab?: string }>;
 }
 
 async function findPlayer(param: string) {
@@ -27,6 +29,7 @@ async function findPlayer(param: string) {
             photoUrl: true,
             position: true,
             number: true,
+            careerSyncedAt: true,
             team: { select: { name: true, slug: true, crestUrl: true } },
         },
     });
@@ -44,8 +47,9 @@ export async function generateMetadata({ params }: PlayerPageProps): Promise<Met
 
 const teamSelect = { select: { id: true, name: true, shortName: true, slug: true, crestUrl: true } } as const;
 
-export default async function PlayerPage({ params }: PlayerPageProps) {
-    const { id } = await params;
+export default async function PlayerPage({ params, searchParams }: PlayerPageProps) {
+    const [{ id }, { tab }] = await Promise.all([params, searchParams]);
+    const activeTab = tab === 'trayectoria' ? 'trayectoria' : 'resumen';
     const player = await findPlayer(id);
     if (!player) notFound();
 
@@ -56,7 +60,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 team: teamSelect,
                 match: {
                     select: {
-                        id: true, date: true, season: true, stage: true, homeScore: true, awayScore: true,
+                        id: true, date: true, season: true, stage: true, homeScore: true, awayScore: true, detailsSyncedAt: true,
                         homeTeamId: true, homeTeam: teamSelect, awayTeam: teamSelect,
                     },
                 },
@@ -127,6 +131,50 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
         D: 'bg-rose-500 text-white',
     };
 
+    // De qué partidos y fechas salen los datos (cabecera y pestaña Trayectoria)
+    const playedDates = played.map((a) => a.match.date.getTime());
+    const coverage: DataCoverage = {
+        matches: played.length,
+        firstMatch: playedDates.length ? new Date(Math.min(...playedDates)) : null,
+        lastMatch: playedDates.length ? new Date(Math.max(...playedDates)) : null,
+        seasons: [...new Set(played.map((a) => a.match.season))].sort(),
+        lastUpdated: played.reduce<Date | null>((latest, a) => {
+            const synced = a.match.detailsSyncedAt;
+            return synced && (!latest || synced > latest) ? synced : latest;
+        }, null),
+    };
+
+    // Pestaña Trayectoria: solo se consulta cuando se abre
+    let career: CareerEntry[] = [];
+    let matchboxSeasons: MatchboxSeason[] = [];
+    if (activeTab === 'trayectoria') {
+        const rows = await prisma.playerCareerTeam.findMany({ where: { playerId: player.id }, orderBy: { sortOrder: 'asc' } });
+        const known = await prisma.team.findMany({
+            where: { apiId: { in: rows.map((r) => r.teamApiId) } },
+            select: { apiId: true, slug: true },
+        });
+        const slugByApiId = new Map(known.map((t) => [t.apiId, t.slug]));
+        career = rows.map((r) => ({
+            teamApiId: r.teamApiId,
+            teamName: r.teamName,
+            teamLogo: r.teamLogo,
+            seasons: r.seasons,
+            teamSlug: slugByApiId.get(r.teamApiId) ?? null,
+        }));
+
+        matchboxSeasons = [...new Set(played.map((a) => a.match.season))].sort().reverse().map((season) => {
+            const clubs = new Map<string, MatchboxSeason['clubs'][number]>();
+            for (const a of played.filter((p) => p.match.season === season)) {
+                const club = clubs.get(a.team.slug) ?? { name: a.team.name, slug: a.team.slug, crestUrl: a.team.crestUrl, matches: 0 };
+                club.matches += 1;
+                clubs.set(a.team.slug, club);
+            }
+            return { season, clubs: [...clubs.values()] };
+        });
+    }
+
+    const monthYear = (date: Date) => date.toLocaleDateString('es-MX', { month: 'short', year: 'numeric' });
+
     const tiles = [
         { icon: CalendarDays, label: 'Partidos', value: totals.matches, hint: `${totals.starts} de titular` },
         { icon: Clock, label: 'Minutos', value: totals.minutes.toLocaleString('es-MX'), hint: null },
@@ -167,11 +215,32 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                             </TeamLink>
                         )}
                     </div>
-                    <p className="text-xs text-slate-500">Estadísticas de los partidos de Champions League registrados en Matchbox.</p>
+                    <p className="text-xs text-slate-500">
+                        {coverage.firstMatch && coverage.lastMatch
+                            ? `Basado en ${coverage.matches} partidos de Champions League, de ${monthYear(coverage.firstMatch)} a ${monthYear(coverage.lastMatch)}.`
+                            : 'Todavía no hay partidos de Champions League con su detalle.'}
+                    </p>
                 </div>
             </section>
 
-            {played.length === 0 ? (
+            {/* Pestañas como enlaces: cada una tiene su URL y funciona sin JavaScript */}
+            <nav aria-label="Secciones del jugador" className="flex gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl w-fit">
+                {([['resumen', 'Resumen'], ['trayectoria', 'Trayectoria']] as const).map(([key, label]) => (
+                    <Link
+                        key={key}
+                        href={key === 'resumen' ? `/players/${id}` : `/players/${id}?tab=${key}`}
+                        scroll={false}
+                        aria-current={activeTab === key ? 'page' : undefined}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === key ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        {label}
+                    </Link>
+                ))}
+            </nav>
+
+            {activeTab === 'trayectoria' ? (
+                <PlayerCareerTab career={career} careerSyncedAt={player.careerSyncedAt} matchboxSeasons={matchboxSeasons} coverage={coverage} />
+            ) : played.length === 0 ? (
                 <p className="text-center text-slate-400 py-14 bg-slate-900/30 border border-dashed border-slate-800 rounded-3xl px-6">
                     Todavía no hay partidos con el detalle de este jugador. Se van completando cada día con el sync de datos.
                 </p>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, X } from 'lucide-react';
 import { toggleReviewReaction, addReviewComment } from '@/app/actions/reviewInteractions';
 import ContentActions from '@/components/moderation/ContentActions';
+import { COMMENT_MAX_LENGTH } from '@/lib/review-limits';
 
 interface Comment {
     id: string;
@@ -271,7 +272,7 @@ export default function ReviewCommentsModal({
                 <form onSubmit={handleAddComment} className="p-4 border-t border-slate-800 bg-slate-900 flex items-center gap-2">
                     <input
                         type="text"
-                        maxLength={1000}
+                        maxLength={COMMENT_MAX_LENGTH}
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         placeholder="Escribe un comentario sobre esta reseña..."

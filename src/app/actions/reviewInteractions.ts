@@ -3,10 +3,9 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
+import { COMMENT_MAX_LENGTH } from '@/lib/review-limits';
 import { BLOCKED_CONTENT_MESSAGE, checkContent } from '@/lib/content-filter';
 import { checkRateLimit, flagAutomatically } from '@/lib/auto-moderation';
-
-const COMMENT_MAX_LENGTH = 1000;
 
 type InteractionResult = { success: true } | { success: false; error: string };
 

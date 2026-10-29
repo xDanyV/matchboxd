@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Loader2, Search, X } from 'lucide-react';
+import { ArrowRight, Loader2, Search, User, X } from 'lucide-react';
 import TeamCrest from '@/components/teams/TeamCrest';
 import { buildSearchHref, type SuggestionsPayload } from '@/lib/search-params';
+import { playerHref } from '@/lib/players';
 
 interface SuggestionsResponse {
     q: string;
@@ -30,9 +32,12 @@ export default function GlobalSearch() {
     const loading = canSearch && !current;
 
     const teams = current?.data.teams ?? [];
+    const players = current?.data.players ?? [];
     const matches = current?.data.matches ?? [];
+    // Orden de navegación con el teclado: equipos, jugadores y partidos
     const items = [
         ...teams.map((team) => ({ key: `team-${team.id}`, href: `/teams/${team.slug}` })),
+        ...players.map((player) => ({ key: `player-${player.id}`, href: playerHref(player.id) })),
         ...matches.map((match) => ({ key: `match-${match.id}`, href: `/matches/${match.id}` })),
     ];
     const activeIndex = Math.min(active, items.length - 1);
@@ -103,7 +108,7 @@ export default function GlobalSearch() {
                 setResponse({ q, data, failed: false });
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') return;
-                setResponse({ q, data: { teams: [], matches: [] }, failed: true });
+                setResponse({ q, data: { teams: [], players: [], matches: [] }, failed: true });
             }
         }, 250);
 
@@ -271,13 +276,47 @@ export default function GlobalSearch() {
                                     </div>
                                 )}
 
+                                {players.length > 0 && (
+                                    <div className="pb-2">
+                                        <p className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                            Jugadores
+                                        </p>
+                                        {players.map((player, index) => {
+                                            const rowIndex = teams.length + index;
+                                            return (
+                                                <Link
+                                                    key={player.id}
+                                                    href={playerHref(player.id)}
+                                                    onClick={close}
+                                                    onMouseEnter={() => setActive(rowIndex)}
+                                                    className={rowClasses(rowIndex)}
+                                                >
+                                                    <span className="flex items-center gap-3 min-w-0">
+                                                        <span className="relative w-7 h-7 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
+                                                            {player.photoUrl ? (
+                                                                <Image src={player.photoUrl} alt="" fill sizes="28px" className="object-cover" />
+                                                            ) : (
+                                                                <User className="w-3.5 h-3.5 text-slate-500 absolute inset-0 m-auto" />
+                                                            )}
+                                                        </span>
+                                                        <span className="truncate text-sm font-bold text-white">{player.name}</span>
+                                                    </span>
+                                                    {player.teamName && (
+                                                        <span className="text-[11px] text-slate-500 truncate max-w-[40%]">{player.teamName}</span>
+                                                    )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
                                 {matches.length > 0 && (
                                     <div className="pb-2">
                                         <p className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                             Partidos
                                         </p>
                                         {matches.map((match, index) => {
-                                            const rowIndex = teams.length + index;
+                                            const rowIndex = teams.length + players.length + index;
                                             return (
                                                 <Link
                                                     key={match.id}
