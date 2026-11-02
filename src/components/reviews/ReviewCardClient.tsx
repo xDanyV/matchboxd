@@ -8,9 +8,31 @@ import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 import { ReviewTagList } from '@/components/reviews/ReviewTagChip';
 import ContentActions from '@/components/moderation/ContentActions';
+import type { CommentsModalReview } from '@/components/reviews/ReviewCommentsModal';
+
+interface CardTeam {
+    name: string;
+    shortName?: string | null;
+    slug?: string | null;
+    crestUrl?: string | null;
+}
+
+export interface ReviewCardData extends CommentsModalReview {
+    hasSpoilers: boolean;
+    tags: string[];
+    createdAt: Date;
+    match: {
+        id: string;
+        homeScore: number;
+        awayScore: number;
+        homeTeam: CardTeam;
+        awayTeam: CardTeam;
+        competition?: { name: string } | null;
+    };
+}
 
 interface ReviewCardClientProps {
-    review: any;
+    review: ReviewCardData;
     currentUserId: string;
     isAdmin?: boolean;
     formattedDate: string;
@@ -23,7 +45,7 @@ function TeamChip({
     fallback,
     align = 'left',
 }: {
-    team: any;
+    team: CardTeam;
     fallback: string;
     align?: 'left' | 'right';
 }) {
@@ -65,11 +87,10 @@ export default function ReviewCardClient({
 
     if (!review) return null;
 
-    const match = review.match || {};
-    const homeTeam = match.homeTeam || {};
-    const awayTeam = match.awayTeam || {};
-    const competition = match.competition || {};
-    const tags: string[] = Array.isArray(review.tags) ? review.tags : [];
+    const { match } = review;
+    const { homeTeam, awayTeam } = match;
+    const competition = match.competition;
+    const tags = review.tags;
 
     return (
         <>
@@ -77,7 +98,7 @@ export default function ReviewCardClient({
 
                 {/* Cabecera de Competición y Fecha (Versión limpia) */}
                 <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/60 pb-3">
-                    {competition.name ? (
+                    {competition?.name ? (
                         <span className="bg-slate-800/80 border border-slate-700/50 px-2.5 py-0.5 rounded-lg font-medium text-slate-300 truncate max-w-45 sm:max-w-none">
                             {competition.name}
                         </span>

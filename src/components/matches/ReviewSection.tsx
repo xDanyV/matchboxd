@@ -5,20 +5,28 @@ import { MessageSquare, Star, Heart } from 'lucide-react';
 import ReviewCommentsModal from '@/components/reviews/ReviewCommentsModal';
 import { ReviewTagList } from '@/components/reviews/ReviewTagChip';
 import ContentActions from '@/components/moderation/ContentActions';
+import type { CommentsModalReview } from '@/components/reviews/ReviewCommentsModal';
+
+export interface ReviewSectionItem extends CommentsModalReview {
+    createdAt: Date;
+    hasSpoilers: boolean;
+    tags: string[];
+    user: { name: string | null; image: string | null };
+}
 
 interface ReviewSectionProps {
-    initialReviews: any[];
+    initialReviews: ReviewSectionItem[];
     currentUserId: string;
     isAdmin?: boolean;
 }
 
 export default function ReviewSection({ initialReviews, currentUserId, isAdmin = false }: ReviewSectionProps) {
-    const [selectedReview, setSelectedReview] = useState<any | null>(null);
+    const [selectedReview, setSelectedReview] = useState<ReviewSectionItem | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filtrado dinámico por texto de reseña o nombre de usuario
     const filteredReviews = initialReviews.filter((review) => {
-        const contentMatch = review.content.toLowerCase().includes(searchQuery.toLowerCase());
+        const contentMatch = (review.content ?? '').toLowerCase().includes(searchQuery.toLowerCase());
         const titleMatch = review.title?.toLowerCase().includes(searchQuery.toLowerCase());
         const userMatch = review.user?.name?.toLowerCase().includes(searchQuery.toLowerCase());
         return contentMatch || titleMatch || userMatch;
@@ -51,7 +59,7 @@ export default function ReviewSection({ initialReviews, currentUserId, isAdmin =
                     </p>
                 ) : (
                     filteredReviews.map((review) => {
-                        const likesCount = review.likes ? review.likes.filter((l: any) => l.isLike).length : 0;
+                        const likesCount = review.likes ? review.likes.filter((l) => l.isLike).length : 0;
                         const commentsCount = review.comments ? review.comments.length : 0;
                         const formattedDate = new Date(review.createdAt).toLocaleDateString('es-ES', {
                             day: 'numeric',

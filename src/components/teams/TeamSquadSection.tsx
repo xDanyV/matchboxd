@@ -138,7 +138,7 @@ export default function TeamSquadSection({ squadGroups }: TeamSquadSectionProps)
                                 >
                                     <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-800 border-2 border-slate-700/80 group-hover:border-emerald-500/50 transition-colors flex items-center justify-center shrink-0">
                                         {player.photoUrl ? (
-                                            <Image src={player.photoUrl} alt={player.name} fill sizes="64px" className="object-cover" />
+                                            <Image unoptimized src={player.photoUrl} alt={player.name} fill sizes="64px" className="object-cover" />
                                         ) : (
                                             <User className="w-7 h-7 text-slate-500" />
                                         )}
@@ -165,7 +165,7 @@ export default function TeamSquadSection({ squadGroups }: TeamSquadSectionProps)
                             {filteredPlayers.map((player) => (
                                 <Link key={player.id} href={playerHref(player.id)} className="flex items-center gap-3 bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/30 rounded-2xl p-2.5 transition-colors">
                                     {player.photoUrl ? (
-                                        <Image src={player.photoUrl} alt={player.name} width={38} height={38} className="w-9.5 h-9.5 rounded-full object-cover bg-slate-800 border border-slate-700 shrink-0" />
+                                        <Image unoptimized src={player.photoUrl} alt={player.name} width={38} height={38} className="w-9.5 h-9.5 rounded-full object-cover bg-slate-800 border border-slate-700 shrink-0" />
                                     ) : (
                                         <div className="w-9.5 h-9.5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
                                             <User className="w-4 h-4" />

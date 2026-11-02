@@ -3,10 +3,33 @@ import { Calendar, MapPin, Sparkles, Trophy, UserCheck } from 'lucide-react';
 import TeamCrest from '@/components/teams/TeamCrest';
 import TeamLink from '@/components/teams/TeamLink';
 import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
+import type { ReviewTagSummary } from '@/lib/review-tags';
+
+interface HeaderTeam {
+    name: string;
+    slug: string;
+    crestUrl: string | null;
+}
 
 interface MatchHeaderSectionProps {
-    match: any;
-    tagSummary: { leading: string[] };
+    match: {
+        competition: { name: string };
+        stage: string | null;
+        season: string;
+        isIconic: boolean;
+        tags: string[];
+        stadium: string | null;
+        referee: string | null;
+        homeTeam: HeaderTeam;
+        awayTeam: HeaderTeam;
+        homeScore: number;
+        awayScore: number;
+        homeHalfScore: number | null;
+        awayHalfScore: number | null;
+        homePenalties: number | null;
+        awayPenalties: number | null;
+    };
+    tagSummary: Pick<ReviewTagSummary, 'leading'>;
     formattedDate: string;
 }
 

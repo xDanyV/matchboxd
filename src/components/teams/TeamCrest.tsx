@@ -23,7 +23,10 @@ export default function TeamCrest({ name, crestUrl, size = 40, className = '' }:
 
     return (
         <div style={box} className={`relative shrink-0 ${className}`}>
+            {/* Escudos y fotos de API-Football ya vienen pequeños: se sirven tal cual, sin pasar
+                por la optimización de imágenes de Vercel (que tiene un límite mensual en el plan gratis) */}
             <Image
+                unoptimized
                 src={crestUrl}
                 alt={name}
                 fill

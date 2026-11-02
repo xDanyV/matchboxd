@@ -25,6 +25,7 @@ export default function TeamVenueSection({
             {venueImageUrl && (
                 <div className="relative sm:col-span-2 aspect-video sm:aspect-auto sm:min-h-44 bg-slate-800">
                     <Image
+                        unoptimized
                         src={venueImageUrl}
                         alt={venueName}
                         fill

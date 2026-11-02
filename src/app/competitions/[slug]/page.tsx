@@ -112,7 +112,7 @@ export default async function CompetitionPage({ params, searchParams }: Competit
                 <div className="flex items-center gap-4 min-w-0">
                     {competition.logoUrl && (
                         <div className="w-14 h-14 rounded-2xl bg-white p-2 shrink-0 relative">
-                            <Image src={competition.logoUrl} alt="" fill sizes="56px" className="object-contain p-2" />
+                            <Image unoptimized src={competition.logoUrl} alt="" fill sizes="56px" className="object-contain p-2" />
                         </div>
                     )}
                     <div className="min-w-0">

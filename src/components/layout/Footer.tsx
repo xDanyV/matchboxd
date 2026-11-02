@@ -1,15 +1,10 @@
-'use client';
-
+// Componente de servidor: no necesita JavaScript en el navegador
 import Link from 'next/link';
 import { Trophy, Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 export default function Footer() {
     return (
-        <motion.footer
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+        <footer
             className="bg-slate-950 border-t border-slate-800/60 text-slate-400 py-8 px-4 sm:px-6 lg:px-8 pb-28 sm:pb-10 mt-auto"
         >
             <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
@@ -68,6 +63,6 @@ export default function Footer() {
                 </Link>
                 <span className="text-slate-600">Proyecto independiente, sin afiliación con la UEFA.</span>
             </nav>
-        </motion.footer>
+        </footer>
     );
 }

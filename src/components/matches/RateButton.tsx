@@ -10,7 +10,7 @@ interface Player {
     photoUrl?: string | null;
 }
 
-interface Team {
+export interface RateTeam {
     id: string;
     name: string;
     shortName?: string | null;
@@ -22,8 +22,8 @@ interface RateButtonProps {
     matchId: string;
     matchTitle: string;
     matchDate: string;
-    homeTeam: Team;
-    awayTeam: Team;
+    homeTeam: RateTeam;
+    awayTeam: RateTeam;
     isAuthenticated: boolean;
     existingReview?: ExistingReview | null;
     existingMvpPlayerId?: string | null;

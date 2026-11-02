@@ -190,7 +190,7 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
             <section className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-center gap-5 sm:gap-8 text-center sm:text-left">
                 <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-emerald-500/40 bg-slate-800 shrink-0">
                     {player.photoUrl ? (
-                        <Image src={player.photoUrl} alt={player.name} fill sizes="112px" className="object-cover" priority />
+                        <Image unoptimized src={player.photoUrl} alt={player.name} fill sizes="112px" className="object-cover" priority />
                     ) : (
                         <User className="w-12 h-12 text-slate-500 absolute inset-0 m-auto" />
                     )}

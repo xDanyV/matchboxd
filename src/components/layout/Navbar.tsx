@@ -138,7 +138,7 @@ export default async function Navbar() {
                     {/* Enlaces con diseño compacto */}
                     <Link
                         href="/"
-                        className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
+                        className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
                     >
                         <Home className="w-5 h-5" />
                         <span className="text-[10px] font-medium">Inicio</span>
@@ -146,7 +146,7 @@ export default async function Navbar() {
 
                     <Link
                         href="/matches"
-                        className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-amber-400 transition-colors"
+                        className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-400 hover:text-amber-400 transition-colors"
                     >
                         <Flame className="w-5 h-5" />
                         <span className="text-[10px] font-medium">Top</span>
@@ -154,16 +154,24 @@ export default async function Navbar() {
 
                     <Link
                         href="/watchlist"
-                        className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
+                        className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
                     >
                         <Bookmark className="w-5 h-5" />
                         <span className="text-[10px] font-medium">Por Ver</span>
                     </Link>
 
+                    <Link
+                        href="/teams"
+                        className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
+                    >
+                        <Shield className="w-5 h-5" />
+                        <span className="text-[10px] font-medium">Equipos</span>
+                    </Link>
+
                     {session?.user && (
                         <Link
                             href="/reviews"
-                            className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
+                            className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
                         >
                             <MessageSquare className="w-5 h-5" />
                             <span className="text-[10px] font-medium">Reseñas</span>
@@ -172,10 +180,10 @@ export default async function Navbar() {
 
                     {/* Perfil / Ingresar */}
                     {session?.user ? (
-                        <div className="relative group">
+                        <div className="relative group flex flex-1 min-w-0 justify-center">
                             <button
                                 aria-label="Menú de usuario"
-                                className="flex flex-col items-center gap-1 px-3 py-1 text-slate-300 focus:outline-none"
+                                className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-300 focus:outline-none"
                             >
                                 {session.user.image ? (
                                     <Image
@@ -223,7 +231,7 @@ export default async function Navbar() {
                         <Link
                             href="/login"
                             aria-label="Ingresar"
-                            className="flex flex-col items-center gap-1 px-3 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
+                            className="flex flex-1 min-w-0 flex-col items-center gap-1 px-1 py-1 text-slate-400 hover:text-emerald-400 transition-colors"
                         >
                                 <LogIn className="w-5 h-5" />
                                 <span className="text-[10px] font-medium">Entrar</span>

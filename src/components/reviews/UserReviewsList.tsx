@@ -13,16 +13,17 @@ import {
     SlidersHorizontal,
     Check
 } from 'lucide-react';
-import ReviewCardClient from '@/components/reviews/ReviewCardClient';
+import type { LucideIcon } from 'lucide-react';
+import ReviewCardClient, { type ReviewCardData } from '@/components/reviews/ReviewCardClient';
 
 interface UserReviewsListProps {
-    initialReviews: any[];
+    initialReviews: ReviewCardData[];
     userId: string;
 }
 
 type SortOption = 'newest' | 'oldest' | 'rating-desc' | 'rating-asc' | 'likes';
 
-const SORT_OPTIONS: { id: SortOption; label: string; icon: any }[] = [
+const SORT_OPTIONS: { id: SortOption; label: string; icon: LucideIcon }[] = [
     { id: 'newest', label: 'Más recientes', icon: Calendar },
     { id: 'oldest', label: 'Más antiguas', icon: Clock },
     { id: 'rating-desc', label: 'Mayor calificación', icon: Star },
@@ -73,8 +74,8 @@ export default function UserReviewsList({ initialReviews, userId }: UserReviewsL
                     return a.rating - b.rating;
                 }
                 if (sortBy === 'likes') {
-                    const aLikes = a.likes ? a.likes.filter((l: any) => l.isLike).length : 0;
-                    const bLikes = b.likes ? b.likes.filter((l: any) => l.isLike).length : 0;
+                    const aLikes = a.likes ? a.likes.filter((l) => l.isLike).length : 0;
+                    const bLikes = b.likes ? b.likes.filter((l) => l.isLike).length : 0;
                     return bLikes - aLikes;
                 }
                 return 0;
@@ -175,7 +176,7 @@ export default function UserReviewsList({ initialReviews, userId }: UserReviewsL
             {/* Resultados de la lista con z-10 */}
             {filteredAndSortedReviews.length === 0 ? (
                 <div className="text-center py-12 bg-slate-900/30 border border-dashed border-slate-800 rounded-3xl p-6">
-                    <p className="text-slate-400 text-xs sm:text-sm">No se encontraron reseñas que coincidan con "{searchTerm}".</p>
+                    <p className="text-slate-400 text-xs sm:text-sm">No se encontraron reseñas que coincidan con «{searchTerm}».</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6 relative z-10">
@@ -186,8 +187,8 @@ export default function UserReviewsList({ initialReviews, userId }: UserReviewsL
                             year: 'numeric',
                         });
 
-                        const likesCount = review.likes ? review.likes.filter((l: any) => l.isLike).length : 0;
-                        const dislikesCount = review.likes ? review.likes.filter((l: any) => !l.isLike).length : 0;
+                        const likesCount = review.likes ? review.likes.filter((l) => l.isLike).length : 0;
+                        const dislikesCount = review.likes ? review.likes.filter((l) => !l.isLike).length : 0;
 
                         return (
                             <ReviewCardClient
