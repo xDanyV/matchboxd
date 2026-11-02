@@ -2,15 +2,27 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { playerHref } from '@/lib/players';
 import { Star, Sparkles, User } from 'lucide-react';
-import RateButton from '@/components/matches/RateButton';
+import RateButton, { type RateTeam } from '@/components/matches/RateButton';
 import { ReviewTagChip } from '@/components/reviews/ReviewTagChip';
 import type { ExistingReview } from '@/components/matches/ReviewModal';
+import type { ReviewTagSummary } from '@/lib/review-tags';
+
+export interface MvpEntry {
+    player: { id: string; name: string; photoUrl: string | null };
+    count: number;
+}
 
 interface MatchRatingMvpProps {
-    match: any;
+    match: {
+        id: string;
+        date: Date;
+        homeTeam: RateTeam;
+        awayTeam: RateTeam;
+        reviews: unknown[];
+    };
     avgRating: string | null;
-    tagSummary: any;
-    mvpList: any[];
+    tagSummary: ReviewTagSummary;
+    mvpList: MvpEntry[];
     totalMvpVotes: number;
     isAuthenticated: boolean;
     existingReview: ExistingReview | null;
@@ -53,7 +65,7 @@ export default function MatchRatingMvpSection({
                                 Etiquetas de la comunidad
                             </span>
                             <div className="flex flex-wrap gap-1.5">
-                                {tagSummary.counts.slice(0, 5).map((item: any) => (
+                                {tagSummary.counts.slice(0, 5).map((item) => (
                                     <ReviewTagChip key={item.slug} slug={item.slug} count={item.count} highlight={item.slug === tagSummary.main} />
                                 ))}
                             </div>
@@ -97,6 +109,7 @@ export default function MatchRatingMvpSection({
                                         <div className="flex items-center gap-2 min-w-0">
                                             {item.player.photoUrl ? (
                                                 <Image
+                                                    unoptimized
                                                     src={item.player.photoUrl}
                                                     alt={item.player.name}
                                                     width={32}

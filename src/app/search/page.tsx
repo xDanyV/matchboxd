@@ -174,7 +174,7 @@ async function SearchResults({ criteria }: { criteria: SearchCriteria }) {
                             >
                                 <span className="relative w-11 h-11 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
                                     {player.photoUrl ? (
-                                        <Image src={player.photoUrl} alt="" fill sizes="44px" className="object-cover" />
+                                        <Image unoptimized src={player.photoUrl} alt="" fill sizes="44px" className="object-cover" />
                                     ) : (
                                         <User className="w-5 h-5 text-slate-500 absolute inset-0 m-auto" />
                                     )}

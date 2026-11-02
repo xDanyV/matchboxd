@@ -27,3 +27,20 @@ const POSITION_NAMES: Record<string, string> = {
 export function positionLabel(position: string | null | undefined): string | null {
     return position ? POSITION_NAMES[position] ?? position : null;
 }
+
+/** 2024 -> "2024/25" */
+const seasonLabel = (year: number) => `${year}/${String(year + 1).slice(-2)}`;
+
+/** [2026, 2025, 2024, 2021] -> "2021/22 · 2024/25 – 2026/27" (agrupa temporadas seguidas) */
+export function formatSeasonRanges(seasons: number[]): string {
+    const sorted = [...new Set(seasons)].sort((a, b) => a - b);
+    const ranges: [number, number][] = [];
+    for (const year of sorted) {
+        const last = ranges[ranges.length - 1];
+        if (last && year === last[1] + 1) last[1] = year;
+        else ranges.push([year, year]);
+    }
+    return ranges
+        .map(([from, to]) => (from === to ? seasonLabel(from) : `${seasonLabel(from)} – ${seasonLabel(to)}`))
+        .join(' · ');
+}

@@ -1,0 +1,50 @@
+# Revisa cada PR (y cada push a la rama principal) antes de fusionar:
+# tipos, ESLint, pruebas y build de producción.
+# El build genera sitemap.xml leyendo la base, así que usa el secreto DATABASE_URL
+# (el mismo que el sync diario). Solo lee: no aplica migraciones ni escribe datos.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Un push nuevo al mismo PR cancela la revisión anterior
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prisma generate
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTH_SECRET: ci-build-only-not-a-real-secret
+          SITE_URL: https://matchbox.example

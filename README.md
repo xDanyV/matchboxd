@@ -138,6 +138,8 @@ When you deploy, add the production callback URL (`https://your-domain/api/auth/
 | `npm run dev` | Starts the development server. |
 | `npm run build` / `npm start` | Builds and serves the production app. |
 | `npm run lint` | Runs ESLint. |
+| `npm run typecheck` | Checks types with `tsc --noEmit`. |
+| `npm test` | Runs the unit tests (Vitest) for the pure logic in `src/lib`: knockout bracket, content filter, search parsing, ratings and player helpers. `npm run test:watch` keeps them running. |
 | `npm run db:migrate` | Creates and applies a new migration (development database only). |
 | `npm run db:deploy` | Applies pending migrations. Use it in production. |
 | `npm run db:status` | Shows which migrations are applied. |
@@ -161,6 +163,10 @@ The free API-Football plan has a small daily request quota and a per-minute limi
 - `sync:daily` spends a fixed budget (90 by default) and keeps a reserve of 5 requests. Each match detail costs a single request (`/fixtures?id=`), which returns events, line-ups and stats together.
 - The free plan only covers the 2022-2024 seasons; the current season needs a paid plan.
 - Requests are spaced out, the per-minute limit is retried automatically and the scripts stop cleanly when the daily quota runs out. Just run them again the next day.
+
+### Checks on every pull request
+
+`.github/workflows/ci.yml` runs the type check, ESLint, the tests and a production build on every pull request and on every push to `main`. The build reads the database to generate `sitemap.xml`, so it uses the same `DATABASE_URL` secret as the daily sync (read only).
 
 ### Daily sync with GitHub Actions
 

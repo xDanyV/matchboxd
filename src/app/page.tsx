@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { classifyStage } from '@/lib/search-params';
@@ -7,9 +8,11 @@ import { KNOCKOUT_ROUNDS } from '@/lib/knockout';
 import TeamCrest from '@/components/teams/TeamCrest';
 import FinalsShowcase, { type LandingFinal } from '@/components/landing/FinalsShowcase';
 
-export const revalidate = 0;
-
 const PAGE_SIZE = 12;
+
+// Los partidos solo cambian con el sync diario: una hora de caché ahorra consultas a Neon en cada visita.
+// unstable_cache guarda JSON, así que las fechas viajan como texto ISO.
+const DATA_TTL = 3600;
 
 interface HomePageProps {
   searchParams: Promise<{ season?: string; page?: string }>;
@@ -86,27 +89,33 @@ function SheetSkeleton() {
   );
 }
 
+const getSeasonPage = unstable_cache(
+  (season: string, page: number) =>
+    Promise.all([
+      prisma.match.count({ where: { season } }),
+      prisma.match.findMany({
+        where: { season },
+        select: {
+          id: true,
+          stage: true,
+          homeScore: true,
+          awayScore: true,
+          homePenalties: true,
+          awayPenalties: true,
+          homeTeam: { select: { name: true, crestUrl: true } },
+          awayTeam: { select: { name: true, crestUrl: true } },
+        },
+        orderBy: { date: 'desc' },
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      }),
+    ]),
+  ['landing-season-page'],
+  { revalidate: DATA_TTL, tags: ['matches'] },
+);
+
 async function SeasonSheet({ season, currentPage }: { season: string; currentPage: number }) {
-  const [total, matches] = await Promise.all([
-    prisma.match.count({ where: { season } }),
-    prisma.match.findMany({
-      where: { season },
-      select: {
-        id: true,
-        date: true,
-        stage: true,
-        homeScore: true,
-        awayScore: true,
-        homePenalties: true,
-        awayPenalties: true,
-        homeTeam: { select: { name: true, crestUrl: true } },
-        awayTeam: { select: { name: true, crestUrl: true } },
-      },
-      orderBy: { date: 'desc' },
-      skip: (currentPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-  ]);
+  const [total, matches] = await getSeasonPage(season, currentPage);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -197,6 +206,37 @@ async function SeasonSheet({ season, currentPage }: { season: string; currentPag
 
 /* ---------------------------------- Página ---------------------------------- */
 
+const getArchiveSummary = unstable_cache(
+  async () => {
+    const [stageCounts, finals] = await Promise.all([
+      prisma.match.groupBy({ by: ['season', 'stage'], _count: true }),
+      prisma.match.findMany({
+        where: { stage: 'Final' },
+        orderBy: { date: 'desc' },
+        select: {
+          id: true,
+          season: true,
+          date: true,
+          stadium: true,
+          homeScore: true,
+          awayScore: true,
+          homeTeam: { select: { name: true, crestUrl: true } },
+          awayTeam: { select: { name: true, crestUrl: true } },
+          players: {
+            where: { rating: { not: null } },
+            orderBy: { rating: 'desc' },
+            take: 1,
+            select: { rating: true, player: { select: { name: true } } },
+          },
+        },
+      }),
+    ]);
+    return { stageCounts, finalsRaw: finals.map((f) => ({ ...f, date: f.date.toISOString() })) };
+  },
+  ['landing-archive-summary'],
+  { revalidate: DATA_TTL, tags: ['matches'] },
+);
+
 const FOLDERS = [
   { href: '#finales', label: 'Finales', tone: 'bg-slate-800 text-slate-100' },
   { href: '#como-funciona', label: 'Cómo funciona', tone: 'bg-slate-700 text-white' },
@@ -218,30 +258,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const parsedPage = parseInt(page || '1', 10);
   const currentPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
 
-  const [session, stageCounts, finalsRaw] = await Promise.all([
-    getSession(),
-    prisma.match.groupBy({ by: ['season', 'stage'], _count: true }),
-    prisma.match.findMany({
-      where: { stage: 'Final' },
-      orderBy: { date: 'desc' },
-      select: {
-        id: true,
-        season: true,
-        date: true,
-        stadium: true,
-        homeScore: true,
-        awayScore: true,
-        homeTeam: { select: { name: true, crestUrl: true } },
-        awayTeam: { select: { name: true, crestUrl: true } },
-        players: {
-          where: { rating: { not: null } },
-          orderBy: { rating: 'desc' },
-          take: 1,
-          select: { rating: true, player: { select: { name: true } } },
-        },
-      },
-    }),
-  ]);
+  const [session, { stageCounts, finalsRaw }] = await Promise.all([getSession(), getArchiveSummary()]);
 
   // Recibo: partidos por temporada, separando fase regular y eliminatorias
   const receipt = new Map<string, { regular: number; knockout: number }>();
@@ -260,7 +277,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .map((f) => ({
       id: f.id,
       year: f.season.slice(-4),
-      dateLabel: f.date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
+      dateLabel: new Date(f.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
       stadium: f.stadium ?? 'Final',
       home: f.homeTeam,
       away: f.awayTeam,
@@ -319,7 +336,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     {latest && (
                       <p className="text-base text-[var(--ink-soft)] sm:text-lg">
                         {latest.homeTeam.name} {latest.homeScore}–{latest.awayScore} {latest.awayTeam.name} ·{' '}
-                        {FINAL_EXTRAS[latest.season]?.city ?? latest.stadium}, {formatTicketDate(latest.date)}
+                        {FINAL_EXTRAS[latest.season]?.city ?? latest.stadium}, {formatTicketDate(new Date(latest.date))}
                       </p>
                     )}
                   </div>

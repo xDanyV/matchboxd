@@ -11,7 +11,7 @@ interface MatchCardTeam {
     crestUrl?: string | null;
 }
 
-interface MatchCardProps {
+export interface MatchCardProps {
     match: {
         id: string;
         homeTeam: MatchCardTeam;

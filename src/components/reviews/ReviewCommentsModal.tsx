@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import { loginHref } from '@/lib/login';
 import { useRouter } from 'next/navigation';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, X } from 'lucide-react';
@@ -8,7 +8,7 @@ import { toggleReviewReaction, addReviewComment } from '@/app/actions/reviewInte
 import ContentActions from '@/components/moderation/ContentActions';
 import { COMMENT_MAX_LENGTH } from '@/lib/review-limits';
 
-interface Comment {
+export interface Comment {
     id: string;
     content: string;
     createdAt: Date;
@@ -20,27 +20,30 @@ interface Comment {
     };
 }
 
-interface ReviewLikeRecord {
+export interface ReviewLikeRecord {
     userId: string;
     isLike: boolean;
 }
 
-interface ReviewCommentsModalProps {
-    review: {
-        id: string;
-        userId: string;
-        title: string | null;
-        content: string | null;
-        rating: number;
-        match?: {
-            homeTeam: { name: string };
-            awayTeam: { name: string };
-            homeScore: number;
-            awayScore: number;
-        };
-        likes: ReviewLikeRecord[];
-        comments: Comment[];
+/** Lo mínimo de una reseña que necesita el modal de comentarios */
+export interface CommentsModalReview {
+    id: string;
+    userId: string;
+    title: string | null;
+    content: string | null;
+    rating: number;
+    match?: {
+        homeTeam: { name: string };
+        awayTeam: { name: string };
+        homeScore: number;
+        awayScore: number;
     };
+    likes: ReviewLikeRecord[];
+    comments: Comment[];
+}
+
+interface ReviewCommentsModalProps {
+    review: CommentsModalReview;
     currentUserId: string;
     isAdmin?: boolean;
     isOpen: boolean;
@@ -63,11 +66,13 @@ export default function ReviewCommentsModal({
     const [localLikes, setLocalLikes] = useState<ReviewLikeRecord[]>(review.likes);
     const [localComments, setLocalComments] = useState<Comment[]>(review.comments);
 
-    // Sincronizar si el prop de review cambia desde fuera
-    useEffect(() => {
+    // Sincronizar si el prop de review cambia desde fuera (ajuste durante el render, sin efecto)
+    const [syncedReview, setSyncedReview] = useState(review);
+    if (syncedReview !== review) {
+        setSyncedReview(review);
         setLocalLikes(review.likes);
         setLocalComments(review.comments);
-    }, [review]);
+    }
 
     if (!isOpen) return null;
 

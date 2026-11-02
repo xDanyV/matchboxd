@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { Calendar, ChevronLeft, ChevronRight, History, Trophy } from 'lucide-react';
-import MatchCard from '@/components/matches/MatchCard';
+import MatchCard, { type MatchCardProps } from '@/components/matches/MatchCard';
 
 interface TeamHistorySectionProps {
-    history: any[];
+    history: MatchCardProps['match'][];
     historyCount: number;
     activeSeason: string | null;
     seasons: string[];

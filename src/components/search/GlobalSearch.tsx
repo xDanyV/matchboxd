@@ -294,7 +294,7 @@ export default function GlobalSearch() {
                                                     <span className="flex items-center gap-3 min-w-0">
                                                         <span className="relative w-7 h-7 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
                                                             {player.photoUrl ? (
-                                                                <Image src={player.photoUrl} alt="" fill sizes="28px" className="object-cover" />
+                                                                <Image unoptimized src={player.photoUrl} alt="" fill sizes="28px" className="object-cover" />
                                                             ) : (
                                                                 <User className="w-3.5 h-3.5 text-slate-500 absolute inset-0 m-auto" />
                                                             )}

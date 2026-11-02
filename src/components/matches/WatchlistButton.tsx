@@ -21,7 +21,7 @@ export default function WatchlistButton({ matchId, initialIsSaved }: WatchlistBu
             try {
                 const res = await toggleWatchlist(matchId);
                 setIsSaved(res.isSaved);
-            } catch (error) {
+            } catch {
                 setIsSaved(!nextState);
             }
         });

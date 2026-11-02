@@ -252,6 +252,7 @@ export default function ReviewModal({
                             >
                                 {homeTeam.crestUrl && (
                                     <Image
+                                        unoptimized
                                         src={homeTeam.crestUrl}
                                         alt={homeTeam.name}
                                         width={18}
@@ -272,6 +273,7 @@ export default function ReviewModal({
                             >
                                 {awayTeam.crestUrl && (
                                     <Image
+                                        unoptimized
                                         src={awayTeam.crestUrl}
                                         alt={awayTeam.name}
                                         width={18}
@@ -299,6 +301,7 @@ export default function ReviewModal({
                                         >
                                             {player.photoUrl ? (
                                                 <Image
+                                                    unoptimized
                                                     src={player.photoUrl}
                                                     alt={player.name}
                                                     width={32}
