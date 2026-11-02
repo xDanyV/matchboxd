@@ -53,6 +53,8 @@ export async function GET() {
             },
             watchlist: { select: { createdAt: true, match: matchSummary } },
             reports: { select: { reason: true, details: true, status: true, createdAt: true } },
+            following: { select: { createdAt: true, following: { select: { username: true } } } },
+            followers: { select: { createdAt: true, follower: { select: { username: true } } } },
         },
     });
 

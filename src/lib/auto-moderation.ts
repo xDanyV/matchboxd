@@ -8,6 +8,7 @@ const LIMITS = {
     comment: { max: 5, windowMs: 60_000, message: 'Vas muy rápido. Espera un minuto antes de volver a comentar.' },
     review: { max: 10, windowMs: 60_000, message: 'Vas muy rápido. Espera un minuto antes de volver a calificar.' },
     report: { max: 10, windowMs: 10 * 60_000, message: 'Has enviado muchos reportes seguidos. Inténtalo de nuevo en unos minutos.' },
+    follow: { max: 30, windowMs: 60_000, message: 'Estás siguiendo a muchas personas seguidas. Espera un minuto.' },
 } as const;
 
 export type RateLimitedAction = keyof typeof LIMITS;
@@ -22,7 +23,9 @@ export async function checkRateLimit(action: RateLimitedAction, userId: string):
             ? await prisma.reviewComment.count({ where: { userId, createdAt: { gte: since } } })
             : action === 'review'
                 ? await prisma.review.count({ where: { userId, updatedAt: { gte: since } } })
-                : await prisma.report.count({ where: { reporterId: userId, createdAt: { gte: since } } });
+                : action === 'follow'
+                    ? await prisma.follow.count({ where: { followerId: userId, createdAt: { gte: since } } })
+                    : await prisma.report.count({ where: { reporterId: userId, createdAt: { gte: since } } });
 
     return count >= max ? message : null;
 }

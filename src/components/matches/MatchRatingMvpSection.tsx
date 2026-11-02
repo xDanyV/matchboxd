@@ -27,6 +27,7 @@ interface MatchRatingMvpProps {
     isAuthenticated: boolean;
     existingReview: ExistingReview | null;
     existingMvpPlayerId: string | null;
+    suggestedRating?: number | null;
     timesWatched: number;
 }
 
@@ -39,6 +40,7 @@ export default function MatchRatingMvpSection({
     isAuthenticated,
     existingReview,
     existingMvpPlayerId,
+    suggestedRating = null,
     timesWatched,
 }: MatchRatingMvpProps) {
     return (
@@ -82,6 +84,7 @@ export default function MatchRatingMvpSection({
                     isAuthenticated={isAuthenticated}
                     existingReview={existingReview}
                     existingMvpPlayerId={existingMvpPlayerId}
+                    suggestedRating={suggestedRating}
                     timesWatched={timesWatched}
                 />
             </div>

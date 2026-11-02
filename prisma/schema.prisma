@@ -35,10 +35,27 @@ model User {
   comments    ReviewComment[]
   reports     Report[]
 
+  // A quién sigue y quién lo sigue
+  following Follow[] @relation("Following")
+  followers Follow[] @relation("Followers")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+/// Un usuario (follower) sigue a otro (following). Al borrar cualquiera de los dos se borra la relación.
+model Follow {
+  followerId  String
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+  @@map("follows")
 }
 
 enum UserRole {
