@@ -16,11 +16,14 @@ import PlayerStatsTable, { type PlayerRow } from '@/components/matches/PlayerSta
 import CommunityVsData from '@/components/matches/CommunityVsData';
 import { POSITION_LABELS, type PlayerMatchStats, type TeamStats } from '@/lib/match-stats';
 import { summarizeReviewTags } from '@/lib/review-tags';
+import { isValidRating } from '@/lib/rating';
 import type { TimelineEvent } from '@/lib/match-events';
 import type { Metadata } from 'next';
 
 interface MatchPageProps {
     params: Promise<{ id: string }>;
+    /** ?rate=8.5: nota que el usuario ya puso en la portada; abre el formulario con ella */
+    searchParams: Promise<{ rate?: string }>;
 }
 
 export const revalidate = 0;
@@ -52,8 +55,10 @@ export async function generateMetadata({ params }: MatchPageProps): Promise<Meta
     };
 }
 
-export default async function MatchDetailPage({ params }: MatchPageProps) {
+export default async function MatchDetailPage({ params, searchParams }: MatchPageProps) {
     const { id } = await params;
+    const { rate } = await searchParams;
+    const suggestedRating = rate !== undefined && isValidRating(Number(rate)) ? Number(rate) : null;
     const session = await getSession();
 
     const match = await prisma.match.findUnique({
@@ -263,6 +268,7 @@ export default async function MatchDetailPage({ params }: MatchPageProps) {
                     totalMvpVotes={totalMvpVotes}
                     isAuthenticated={!!session?.user}
                     existingReview={existingReview}
+                    suggestedRating={suggestedRating}
                     existingMvpPlayerId={existingMvpPlayerId}
                     timesWatched={timesWatched}
                 />

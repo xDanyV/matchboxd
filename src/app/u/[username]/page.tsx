@@ -11,6 +11,8 @@ import TeamLink from '@/components/teams/TeamLink';
 import ProfileStats from '@/components/profile/ProfileStats';
 import DiaryList, { type DiaryEntry } from '@/components/profile/DiaryList';
 import { getUserStats } from '@/lib/user-stats';
+import { getFollowSummary } from '@/lib/follows';
+import FollowButton from '@/components/profile/FollowButton';
 
 const DIARY_LIMIT = 10;
 
@@ -69,7 +71,9 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
 
     if (!user) notFound();
 
-    const [stats, logs, ratings] = await Promise.all([
+    const viewerId = session?.user?.id ?? '';
+
+    const [stats, logs, ratings, social] = await Promise.all([
         getUserStats(user.id),
         prisma.matchLog.findMany({
             where: { userId: user.id },
@@ -88,6 +92,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
             take: DIARY_LIMIT,
         }),
         prisma.review.findMany({ where: { userId: user.id }, select: { matchId: true, rating: true } }),
+        getFollowSummary(user.id, viewerId || null),
     ]);
 
     const ratingByMatch = new Map(ratings.map((review) => [review.matchId, review.rating]));
@@ -100,7 +105,6 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         rating: ratingByMatch.get(log.matchId) ?? null,
     }));
 
-    const viewerId = session?.user?.id ?? '';
     const isOwner = viewerId !== '' && viewerId === user.id;
     const viewerIsAdmin = session?.user?.role === 'ADMIN';
     const displayName = user.name ?? user.username ?? 'Usuario';
@@ -134,8 +138,45 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight truncate">
                                 {displayName}
                             </h1>
-                            <p className="text-sm font-semibold text-emerald-400">@{user.username}</p>
+                            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-emerald-400">
+                                @{user.username}
+                                {social.followsViewer && (
+                                    <span className="rounded-md bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-300">Te sigue</span>
+                                )}
+                            </p>
                         </div>
+
+                        {/* Lo social: seguidores, a quién sigue y cuánto gustan sus reseñas */}
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+                            <Link href={`/u/${user.username}/seguidores`} className="text-slate-400 hover:text-white transition-colors">
+                                <strong className="text-white font-black tabular-nums">{social.followers}</strong>{' '}
+                                {social.followers === 1 ? 'seguidor' : 'seguidores'}
+                            </Link>
+                            <Link href={`/u/${user.username}/siguiendo`} className="text-slate-400 hover:text-white transition-colors">
+                                <strong className="text-white font-black tabular-nums">{social.following}</strong> siguiendo
+                            </Link>
+                            <span className="text-slate-400">
+                                <strong className="text-white font-black tabular-nums">{social.likesReceived}</strong>{' '}
+                                {social.likesReceived === 1 ? 'me gusta recibido' : 'me gusta recibidos'}
+                            </span>
+                        </div>
+
+                        {social.knownFollowersCount > 0 && (
+                            <p className="text-xs text-slate-400">
+                                Lo siguen{' '}
+                                {social.knownFollowers.map((known, i) => (
+                                    <span key={known.username}>
+                                        {i > 0 && (i === social.knownFollowers.length - 1 && social.knownFollowersCount <= social.knownFollowers.length ? ' y ' : ', ')}
+                                        <Link href={`/u/${known.username}`} className="font-semibold text-slate-200 hover:text-emerald-400">
+                                            @{known.username}
+                                        </Link>
+                                    </span>
+                                ))}
+                                {social.knownFollowersCount > social.knownFollowers.length &&
+                                    ` y ${social.knownFollowersCount - social.knownFollowers.length} más`}
+                                , a quienes tú sigues.
+                            </p>
+                        )}
 
                         {user.bio && (
                             <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl whitespace-pre-line">
@@ -166,6 +207,18 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                             </span>
                         </div>
                     </div>
+
+                    {!isOwner && (
+                        <div className="shrink-0">
+                            <FollowButton
+                                key={String(social.viewerFollows)}
+                                targetUserId={user.id}
+                                initialFollowing={social.viewerFollows}
+                                isLoggedIn={viewerId !== ''}
+                                returnTo={`/u/${user.username}`}
+                            />
+                        </div>
+                    )}
 
                     {isOwner && (
                         <div className="flex flex-wrap sm:flex-col gap-2 shrink-0">

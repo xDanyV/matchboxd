@@ -13,7 +13,7 @@ For now it focuses on the **UEFA Champions League**, with match data coming from
 
 ## Features
 
-- **Landing page** built as the archive's stationery: a stack of folders that link to each section, the three finals of the archive as ticket stubs (stadium photo, story and a live half-star rating to compare with the best API player rating of that final), the matches total with its receipt per season and phase, the season as a printed sheet grouped by stage with pagination, and a search sentence.
+- **Landing page** (the rating you give a final there travels to the match page with `?rate=` and opens the rating form with it, also after signing in) built as the archive's stationery: a stack of folders that link to each section, the three finals of the archive as ticket stubs (stadium photo, story and a live half-star rating to compare with the best API player rating of that final), the matches total with its receipt per season and phase, the season as a printed sheet grouped by stage with pagination, and a search sentence.
 - **Browse matches** by season, with pagination.
 - **Top matches** ranking based on community ratings.
 - **Match page** with score (half-time and penalty shoot-out), venue, referee, community rating, MVP voting, a match **timeline** (goals, cards, substitutions and VAR checks), **team stats** (possession, xG, shots, passes, corners...), **line-ups drawn on a pitch** with kit colors and player ratings, a **player stats table**, a "community vs. the numbers" card (community MVP against the best rated player) and the reviews wall. MVP candidates come from the real line-up of that match.
@@ -31,6 +31,7 @@ For now it focuses on the **UEFA Champions League**, with match data coming from
 - **Privacy and account control**: users can download all their data as JSON and delete their account (everything they created is removed) from the profile settings. Privacy policy (`/privacidad`) and terms of use (`/terminos`) pages, linked from the footer and the login page.
 - **Teams index** (`/teams`) grouped by country, with an instant filter by name, nickname or country.
 - **Team pages** (`/teams/[slug]`) with crest, country, founding year, venue, current squad, best rated matches and match history. Team crests link to them across the whole app.
+- **Follow users**: follow and unfollow from any profile or follower list. Profiles show followers, following and likes received, a "Te sigue" badge, and which people you follow also follow that user. Lists live at `/u/[username]/seguidores` and `/u/[username]/siguiendo`. Follows are included in the data export and removed with the account.
 - **Global search**: press `/` or `Ctrl+K` for quick suggestions (teams, players and matches), or use `/search` to filter by season, stage and rating range. Player search ignores accents (`muller` finds Müller).
 - **Length limits**: review titles up to 120 characters, review text up to 5,000 and comments up to 1,000, checked on the server and shown with a counter in the form.
 - **SEO**: `sitemap.xml` (competitions, seasons, teams, matches and players; user profiles are left out) and `robots.txt`, both built from `SITE_URL`.
@@ -138,7 +139,8 @@ When you deploy, add the production callback URL (`https://your-domain/api/auth/
 | `npm run dev` | Starts the development server. |
 | `npm run build` / `npm start` | Builds and serves the production app. |
 | `npm run lint` | Runs ESLint. |
-| `npm run typecheck` | Checks types with `tsc --noEmit`. |
+| `postinstall` | Runs `prisma generate` after every install, so Vercel (which caches `node_modules`) always builds with a client that matches the schema. |
+| `npm run typecheck` | Generates the route types (`next typegen`) and checks types with `tsc --noEmit`. |
 | `npm test` | Runs the unit tests (Vitest) for the pure logic in `src/lib`: knockout bracket, content filter, search parsing, ratings and player helpers. `npm run test:watch` keeps them running. |
 | `npm run db:migrate` | Creates and applies a new migration (development database only). |
 | `npm run db:deploy` | Applies pending migrations. Use it in production. |

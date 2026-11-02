@@ -50,6 +50,8 @@ interface ReviewModalProps {
     existingMvpPlayerId?: string | null;
     /** Veces que el usuario ya registró este partido en su diario */
     timesWatched?: number;
+    /** Nota con la que abrir el formulario (la que se puso en la portada) */
+    initialRating?: number | null;
 }
 
 export default function ReviewModal({
@@ -64,11 +66,12 @@ export default function ReviewModal({
     existingReview = null,
     existingMvpPlayerId = null,
     timesWatched = 0,
+    initialRating = null,
 }: ReviewModalProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
-    const [rating, setRating] = useState<number>(existingReview?.rating ?? 8);
+    const [rating, setRating] = useState<number>(initialRating ?? existingReview?.rating ?? 8);
     const [title, setTitle] = useState(existingReview?.title ?? '');
     const [content, setContent] = useState(existingReview?.content ?? '');
     const [mvpPlayerId, setMvpPlayerId] = useState(existingMvpPlayerId ?? '');

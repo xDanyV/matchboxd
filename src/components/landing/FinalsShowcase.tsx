@@ -44,7 +44,9 @@ export default function FinalsShowcase({ finals, isLoggedIn }: FinalsShowcasePro
     const setRating = (value: number) =>
         setRatings((prev) => ({ ...prev, [final.id]: Math.min(RATING_MAX, Math.max(RATING_MIN, value)) }));
 
-    const diaryHref = isLoggedIn ? `/matches/${final.id}` : `/login?callbackUrl=${encodeURIComponent(`/matches/${final.id}`)}`;
+    // La nota viaja al partido (?rate=) y abre el formulario con ella, también después de iniciar sesión
+    const matchHref = myRating ? `/matches/${final.id}?rate=${myRating}` : `/matches/${final.id}`;
+    const diaryHref = isLoggedIn ? matchHref : `/login?callbackUrl=${encodeURIComponent(matchHref)}`;
 
     return (
         <div className="grid gap-8 md:grid-cols-2 md:gap-12 lg:gap-16 items-start">

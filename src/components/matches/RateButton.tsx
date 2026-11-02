@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReviewModal, { type ExistingReview } from './ReviewModal';
 
 interface Player {
@@ -28,6 +28,8 @@ interface RateButtonProps {
     existingReview?: ExistingReview | null;
     existingMvpPlayerId?: string | null;
     timesWatched?: number;
+    /** Nota que llega desde la portada (?rate=): abre el formulario ya con ella */
+    suggestedRating?: number | null;
 }
 
 export default function RateButton({
@@ -40,8 +42,17 @@ export default function RateButton({
     existingReview = null,
     existingMvpPlayerId = null,
     timesWatched = 0,
+    suggestedRating = null,
 }: RateButtonProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(suggestedRating !== null);
+
+    // Quita ?rate= de la URL para que recargar o compartir el enlace no vuelva a abrir el formulario
+    useEffect(() => {
+        if (suggestedRating === null) return;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('rate');
+        window.history.replaceState(window.history.state, '', url);
+    }, [suggestedRating]);
 
     return (
         <>
@@ -66,6 +77,7 @@ export default function RateButton({
                     existingReview={existingReview}
                     existingMvpPlayerId={existingMvpPlayerId}
                     timesWatched={timesWatched}
+                    initialRating={suggestedRating}
                 />
             )}
         </>
