@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatSeasonRanges, playerHref, playerIdFromParam } from './players';
+import { formatSeasonRanges, normalizeSeasons, playerHref, playerIdFromParam } from './players';
 import { formatRating, isValidRating } from './rating';
 
 describe('formatSeasonRanges', () => {
@@ -13,6 +13,20 @@ describe('formatSeasonRanges', () => {
 
     it('devuelve vacío sin temporadas', () => {
         expect(formatSeasonRanges([])).toBe('');
+    });
+});
+
+describe('normalizeSeasons', () => {
+    it('convierte los años en texto a números y los ordena del más reciente', () => {
+        expect(normalizeSeasons(['2022', 2024, '2023'])).toEqual([2024, 2023, 2022]);
+    });
+
+    it('descarta valores que no son años y los repetidos', () => {
+        expect(normalizeSeasons([2024, '2024', 'abc', null, 2024.5])).toEqual([2024]);
+    });
+
+    it('devuelve vacío si no llega una lista', () => {
+        expect(normalizeSeasons(undefined)).toEqual([]);
     });
 });
 

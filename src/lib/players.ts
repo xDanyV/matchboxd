@@ -31,6 +31,16 @@ export function positionLabel(position: string | null | undefined): string | nul
 /** 2024 -> "2024/25" */
 const seasonLabel = (year: number) => `${year}/${String(year + 1).slice(-2)}`;
 
+/**
+ * Temporadas tal como llegan de API-Football -> años enteros, sin repetir, del más reciente al más antiguo.
+ * La API a veces las manda como texto ("2024") o con valores sueltos que no son años.
+ */
+export function normalizeSeasons(values: unknown): number[] {
+    if (!Array.isArray(values)) return [];
+    const years = values.map(Number).filter((year) => Number.isInteger(year) && year >= 1850 && year <= 2200);
+    return [...new Set(years)].sort((a, b) => b - a);
+}
+
 /** [2026, 2025, 2024, 2021] -> "2021/22 · 2024/25 – 2026/27" (agrupa temporadas seguidas) */
 export function formatSeasonRanges(seasons: number[]): string {
     const sorted = [...new Set(seasons)].sort((a, b) => a - b);
