@@ -2,6 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { BudgetError, QuotaError, createApiClient, type ApiClient } from './lib/api-football';
 import { buildDrafts, resolveOwnGoals, type ApiEvent } from './lib/match-events';
 import { normalizePlayerStats, normalizeTeamStats } from '../src/lib/match-stats';
+import { normalizeSeasons } from '../src/lib/players';
 
 /**
  * Sync diario: aprovecha la cuota gratis de API-Football para completar la base de datos
@@ -470,7 +471,8 @@ async function syncMatchDetails(api: ApiClient) {
 
 interface ApiPlayerTeams {
     team: { id: number; name: string; logo?: string | null };
-    seasons: number[];
+    // Normalmente números, pero la API a veces los manda como texto
+    seasons: (number | string)[];
 }
 
 async function syncCareers(api: ApiClient) {
@@ -501,7 +503,7 @@ async function syncCareers(api: ApiClient) {
             teamApiId: entry.team.id,
             teamName: entry.team.name,
             teamLogo: entry.team.logo ?? null,
-            seasons: [...(entry.seasons ?? [])].sort((a, b) => b - a),
+            seasons: normalizeSeasons(entry.seasons),
             sortOrder: index,
         }));
 
